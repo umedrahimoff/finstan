@@ -93,16 +93,27 @@ export async function ensureUserDoc(
     return invite.role
   }
 
-  let role: UserRole | null
   if (isGlobalAdmin(email)) {
-    role = "admin"
-  } else {
-    const adminsQuery = query(
-      collection(db, USERS_COLLECTION),
-      where("role", "==", "admin")
-    )
-    const adminsSnap = await getDocs(adminsQuery)
-    role = adminsSnap.empty ? "admin" : null
+    const [firstName, lastName] = parseDisplayName(displayName)
+    await setDoc(userRef, {
+      email,
+      displayName,
+      firstName,
+      lastName,
+      photoURL: photoURL ?? null,
+      role: "admin",
+      updatedAt: new Date().toISOString(),
+    })
+    return "admin"
+  }
+
+  const adminsQuery = query(
+    collection(db, USERS_COLLECTION),
+    where("role", "==", "admin")
+  )
+  const adminsSnap = await getDocs(adminsQuery)
+  if (!adminsSnap.empty) {
+    throw new Error("INVITE_REQUIRED")
   }
 
   const [firstName, lastName] = parseDisplayName(displayName)
@@ -112,11 +123,10 @@ export async function ensureUserDoc(
     firstName,
     lastName,
     photoURL: photoURL ?? null,
-    role,
+    role: "admin",
     updatedAt: new Date().toISOString(),
   })
-
-  return role
+  return "admin"
 }
 
 export async function getCurrentUserRole(uid: string): Promise<UserRole | null> {

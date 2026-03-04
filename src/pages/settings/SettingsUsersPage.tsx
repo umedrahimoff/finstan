@@ -132,8 +132,8 @@ export function SettingsUsersPage() {
       <div>
         <h2 className="text-lg font-semibold">Пользователи</h2>
         <p className="text-sm text-muted-foreground">
-          Управление ролями. Первый вошедший пользователь становится администратором.
-          Администратор назначается один раз и не может быть удалён.
+          Добавьте пользователя по email — он сможет войти через Google. Без приглашения вход запрещён.
+          Администратор по умолчанию: thisisumed@gmail.com
         </p>
       </div>
       <Card>
@@ -163,8 +163,7 @@ export function SettingsUsersPage() {
               <Users className="mb-4 size-12 text-muted-foreground/50" />
               <p className="text-sm font-medium">Нет пользователей</p>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Пользователи создаются при первом входе. Войдите в приложение —
-                ваш аккаунт появится здесь. Первый вошедший получит роль администратора.
+                Добавьте пользователя по email — после приглашения он сможет войти через Google.
               </p>
             </div>
           ) : (
@@ -259,7 +258,7 @@ export function SettingsUsersPage() {
           <DialogHeader>
             <DialogTitle>Добавить пользователя</DialogTitle>
             <DialogDescription>
-              Укажите email. Пользователь получит приглашение и при первом входе (через Google с этим email) ему будет назначена выбранная роль.
+              Укажите email. Пользователь сможет войти через Google только после приглашения. При первом входе ему будет назначена выбранная роль.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

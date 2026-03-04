@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react"
 import type { User } from "firebase/auth"
-import { onAuthStateChanged } from "firebase/auth"
+import { onAuthStateChanged, signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import {
   ensureUserDoc,
@@ -59,10 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return getUserProfile(u.uid)
           })
           .then((p) => setProfile(p))
-          .catch((err) => {
-            console.error("Auth init failed:", err)
-            setRole(null)
-            setProfile(null)
+          .catch(async (err) => {
+            if (err?.message === "INVITE_REQUIRED") {
+              await signOut(auth)
+              setUser(null)
+              setRole(null)
+              setProfile(null)
+              window.location.href = "/login?error=invite_required"
+            } else {
+              console.error("Auth init failed:", err)
+              setRole(null)
+              setProfile(null)
+            }
           })
       } else {
         setRole(null)

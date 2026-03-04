@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom"
 import { Mail, Lock, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,15 +28,25 @@ function getAuthErrorMessage(err: AuthError): string {
   return err.message
 }
 
+const INVITE_ERROR = "Нужно приглашение от администратора. Обратитесь к владельцу приложения."
+
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/"
   const [mode, setMode] = useState<"login" | "register">("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get("error") === "invite_required") {
+      setError(INVITE_ERROR)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault()
