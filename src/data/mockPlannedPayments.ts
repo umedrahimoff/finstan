@@ -18,6 +18,8 @@ export const mockPlannedPayments: PlannedPayment[] = [
     type: "expense",
     title: "Аренда офиса",
     categoryId: "cat-4",
+    recurrence: "monthly",
+    repeatUntil: "2025-12-31",
   },
   {
     id: "pp-3",

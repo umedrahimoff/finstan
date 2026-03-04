@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, Plus, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -54,6 +54,8 @@ export function CounterpartiesPage() {
     id: string
     name: string
   } | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deletingBatch, setDeletingBatch] = useState(false)
   const [typeFilter, setTypeFilter] = useState<"all" | "client" | "supplier" | "partner">("all")
 
   const filteredCounterparties =
@@ -92,6 +94,29 @@ export function CounterpartiesPage() {
     }
   }
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredCounterparties.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredCounterparties.map((c) => c.id)))
+    }
+  }
+
+  const handleBatchDeleteConfirm = () => {
+    selectedIds.forEach((id) => deleteCounterparty(id))
+    setSelectedIds(new Set())
+    setDeletingBatch(false)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -119,10 +144,41 @@ export function CounterpartiesPage() {
         </TabsList>
       </Tabs>
 
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-4 rounded-md border bg-muted/50 px-4 py-2">
+          <span className="text-sm font-medium">Выбрано: {selectedIds.size}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setDeletingBatch(true)}
+          >
+            <Trash2 className="mr-2 size-4" />
+            Удалить выбранные
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+            Снять выбор
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <button
+                  type="button"
+                  className="flex items-center justify-center"
+                  onClick={toggleSelectAll}
+                >
+                  {selectedIds.size === filteredCounterparties.length && filteredCounterparties.length > 0 ? (
+                    <CheckSquare className="size-4 text-primary" />
+                  ) : (
+                    <Square className="size-4 text-muted-foreground" />
+                  )}
+                </button>
+              </TableHead>
               <TableHead>Название</TableHead>
               <TableHead>Тип</TableHead>
               <TableHead className="text-right">Сумма по операциям</TableHead>
@@ -133,7 +189,7 @@ export function CounterpartiesPage() {
             {filteredCounterparties.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Контрагентов пока нет. Добавьте первого контрагента.
@@ -144,6 +200,19 @@ export function CounterpartiesPage() {
                 const total = getCounterpartyTotal(cp.id)
                 return (
                   <TableRow key={cp.id}>
+                    <TableCell className="w-[40px]">
+                      <button
+                        type="button"
+                        className="flex items-center justify-center"
+                        onClick={() => toggleSelect(cp.id)}
+                      >
+                        {selectedIds.has(cp.id) ? (
+                          <CheckSquare className="size-4 text-primary" />
+                        ) : (
+                          <Square className="size-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </TableCell>
                     <TableCell>
                       <Link
                         to={`/transactions?counterparty=${cp.id}`}
@@ -236,6 +305,29 @@ export function CounterpartiesPage() {
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deletingBatch}
+        onOpenChange={(open) => !open && setDeletingBatch(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранных контрагентов?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Будет удалено контрагентов: {selectedIds.size}. Операции останутся в истории.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Удалить

@@ -50,6 +50,7 @@ interface CompanyDataState {
   // Actions
   addAccount: (acc: Omit<Account, "id" | "balance">) => Account
   updateAccount: (id: string, acc: Partial<Omit<Account, "id">>) => void
+  setPrimaryAccount: (id: string) => void
   deleteAccount: (id: string) => void
   addCategory: (cat: Omit<Category, "id">) => Category
   updateCategory: (id: string, cat: Partial<Omit<Category, "id">>) => void
@@ -140,7 +141,9 @@ export const useCompanyDataStore = create<CompanyDataState>()(
       addAccount: (acc) => {
         const companyId = getCompanyId()
         const id = generateId("acc")
-        const newAcc = { ...acc, id, balance: 0 }
+        const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+        const isFirst = data.accounts.length === 0
+        const newAcc = { ...acc, id, balance: 0, isPrimary: isFirst }
         set((state) => {
           const data = getOrInitCompany(state, companyId)
           return {
@@ -167,6 +170,23 @@ export const useCompanyDataStore = create<CompanyDataState>()(
                 accounts: data.accounts.map((a) =>
                   a.id === id ? { ...a, ...acc } : a
                 ),
+              },
+            },
+          }
+        }),
+      setPrimaryAccount: (id) =>
+        set((state) => {
+          const companyId = getCompanyId()
+          const data = getOrInitCompany(state, companyId)
+          return {
+            byCompany: {
+              ...state.byCompany,
+              [companyId]: {
+                ...data,
+                accounts: data.accounts.map((a) => ({
+                  ...a,
+                  isPrimary: a.id === id,
+                })),
               },
             },
           }

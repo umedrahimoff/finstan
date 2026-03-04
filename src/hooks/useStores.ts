@@ -34,6 +34,7 @@ type AccountsState = {
   accounts: Account[]
   addAccount: (acc: Omit<Account, "id" | "balance">) => Account
   updateAccount: (id: string, acc: Partial<Omit<Account, "id">>) => void
+  setPrimaryAccount: (id: string) => void
   deleteAccount: (id: string) => void
 }
 
@@ -44,8 +45,9 @@ export function useAccountsStore<T>(selector?: (s: AccountsState) => T): T | Acc
   const accounts = useCompanyDataStore((s) => s.getAccounts(companyId))
   const addAccount = useCompanyDataStore((s) => s.addAccount)
   const updateAccount = useCompanyDataStore((s) => s.updateAccount)
+  const setPrimaryAccount = useCompanyDataStore((s) => s.setPrimaryAccount)
   const deleteAccount = useCompanyDataStore((s) => s.deleteAccount)
-  const state = { accounts, addAccount, updateAccount, deleteAccount }
+  const state = { accounts, addAccount, updateAccount, setPrimaryAccount, deleteAccount }
   if (selector) return selector(state) as T
   return state
 }

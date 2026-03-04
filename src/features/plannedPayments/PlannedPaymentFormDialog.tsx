@@ -13,6 +13,8 @@ interface PlannedPaymentFormDialogProps {
   defaultValues?: Partial<PlannedPaymentFormValues>
   onSubmit: (values: PlannedPaymentFormValues) => void
   onDelete?: () => void
+  onConfirm?: (values: PlannedPaymentFormValues) => void
+  confirmDisabled?: boolean
   title?: string
 }
 
@@ -22,6 +24,8 @@ export function PlannedPaymentFormDialog({
   defaultValues,
   onSubmit,
   onDelete,
+  onConfirm,
+  confirmDisabled = false,
   title = "Запланировать платёж",
 }: PlannedPaymentFormDialogProps) {
   const handleSubmit = (values: PlannedPaymentFormValues) => {
@@ -45,6 +49,18 @@ export function PlannedPaymentFormDialog({
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}
           onDelete={onDelete ? handleDelete : undefined}
+          onConfirm={
+            onConfirm && !confirmDisabled
+              ? (v) => {
+                  try {
+                    onConfirm(v)
+                  } finally {
+                    onOpenChange(false)
+                  }
+                }
+              : undefined
+          }
+          confirmDisabled={confirmDisabled}
         />
       </DialogContent>
     </Dialog>

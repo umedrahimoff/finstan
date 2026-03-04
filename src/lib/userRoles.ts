@@ -58,9 +58,15 @@ export async function ensureUserDoc(
   if (userSnap.exists()) {
     const data = userSnap.data()
     const [firstName, lastName] = parseDisplayName(displayName)
-    const role = isGlobalAdmin(email)
+    let role = isGlobalAdmin(email)
       ? "admin"
       : ((data.role as UserRole) ?? null)
+    if (!role) {
+      const allSnap = await getDocs(collection(db, USERS_COLLECTION))
+      if (allSnap.size === 1 && allSnap.docs[0].id === uid) {
+        role = "admin"
+      }
+    }
     await setDoc(
       userRef,
       {
@@ -134,7 +140,11 @@ export async function getCurrentUserRole(uid: string): Promise<UserRole | null> 
   if (!userSnap.exists()) return null
   const data = userSnap.data()
   if (isGlobalAdmin(data.email ?? null)) return "admin"
-  return (data.role as UserRole) ?? null
+  const role = (data.role as UserRole) ?? null
+  if (role === "admin") return "admin"
+  const allUsers = await getDocs(collection(db, USERS_COLLECTION))
+  if (allUsers.size === 1 && allUsers.docs[0].id === uid) return "admin"
+  return role
 }
 
 export async function getAllUsers(): Promise<AppUser[]> {

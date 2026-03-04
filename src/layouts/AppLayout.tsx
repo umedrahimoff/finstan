@@ -44,6 +44,7 @@ export function AppLayout() {
     setQuickAddType(null)
   }
 
+  const primaryAccountId = accounts.find((a) => a.isPrimary)?.id ?? accounts[0]?.id ?? ""
   const getQuickAddDefaults = (): Partial<TransactionFormValues> | undefined => {
     if (!quickAddType) return undefined
     return {
@@ -51,7 +52,7 @@ export function AppLayout() {
       date: new Date().toISOString().slice(0, 10),
       currency: "UZS",
       amount: 0,
-      accountId: accounts[0]?.id ?? "",
+      accountId: primaryAccountId,
     }
   }
 

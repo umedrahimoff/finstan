@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, Plus, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -41,11 +41,13 @@ function getAccountTypeLabel(type: string) {
 export function AccountsPage() {
   const accounts = useAccountsStore((s) => s.accounts)
   const transactions = useTransactionsStore((s) => s.transactions)
-  const { addAccount, updateAccount, deleteAccount } = useAccountsStore()
+  const { addAccount, updateAccount, setPrimaryAccount, deleteAccount } = useAccountsStore()
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<{ id: string; name: string; type: string; currency: string } | null>(null)
   const [deletingAccount, setDeletingAccount] = useState<{ id: string; name: string } | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deletingBatch, setDeletingBatch] = useState(false)
 
   const accountsWithBalance = accounts.map((acc) => ({
     ...acc,
@@ -74,6 +76,29 @@ export function AccountsPage() {
     }
   }
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === accountsWithBalance.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(accountsWithBalance.map((a) => a.id)))
+    }
+  }
+
+  const handleBatchDeleteConfirm = () => {
+    selectedIds.forEach((id) => deleteAccount(id))
+    setSelectedIds(new Set())
+    setDeletingBatch(false)
+  }
+
   const totalBalance = accountsWithBalance.reduce((sum, a) => sum + a.balance, 0)
 
   return (
@@ -91,10 +116,41 @@ export function AccountsPage() {
         </Button>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-4 rounded-md border bg-muted/50 px-4 py-2">
+          <span className="text-sm font-medium">Выбрано: {selectedIds.size}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setDeletingBatch(true)}
+          >
+            <Trash2 className="mr-2 size-4" />
+            Удалить выбранные
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+            Снять выбор
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <button
+                  type="button"
+                  className="flex items-center justify-center"
+                  onClick={toggleSelectAll}
+                >
+                  {selectedIds.size === accountsWithBalance.length && accountsWithBalance.length > 0 ? (
+                    <CheckSquare className="size-4 text-primary" />
+                  ) : (
+                    <Square className="size-4 text-muted-foreground" />
+                  )}
+                </button>
+              </TableHead>
               <TableHead>Название</TableHead>
               <TableHead>Тип</TableHead>
               <TableHead>Валюта</TableHead>
@@ -106,7 +162,7 @@ export function AccountsPage() {
             {accountsWithBalance.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Счетов пока нет. Добавьте первый счёт.
@@ -115,12 +171,28 @@ export function AccountsPage() {
             ) : (
               accountsWithBalance.map((acc) => (
                 <TableRow key={acc.id}>
+                  <TableCell className="w-[40px]">
+                    <button
+                      type="button"
+                      className="flex items-center justify-center"
+                      onClick={() => toggleSelect(acc.id)}
+                    >
+                      {selectedIds.has(acc.id) ? (
+                        <CheckSquare className="size-4 text-primary" />
+                      ) : (
+                        <Square className="size-4 text-muted-foreground" />
+                      )}
+                    </button>
+                    </TableCell>
                   <TableCell>
                     <Link
                       to={`/transactions?account=${acc.id}`}
                       className="font-medium hover:underline"
                     >
                       {acc.name}
+                      {acc.isPrimary && (
+                        <span className="ml-1.5 text-xs text-muted-foreground">(основной)</span>
+                      )}
                     </Link>
                   </TableCell>
                   <TableCell>{getAccountTypeLabel(acc.type)}</TableCell>
@@ -140,6 +212,12 @@ export function AccountsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => setPrimaryAccount(acc.id)}
+                          disabled={acc.isPrimary}
+                        >
+                          {acc.isPrimary ? "По умолчанию" : "Сделать по умолчанию"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {
                             setEditingAccount(acc)
@@ -215,6 +293,29 @@ export function AccountsPage() {
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deletingBatch}
+        onOpenChange={(open) => !open && setDeletingBatch(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные счета?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Будет удалено счетов: {selectedIds.size}. Операции останутся в истории.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Удалить

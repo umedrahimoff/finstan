@@ -1,7 +1,7 @@
 import type { Transaction, Account, Category, Counterparty } from "@/types"
 
 export const mockAccounts: Account[] = [
-  { id: "acc-1", name: "Основной счёт", type: "bank", currency: "UZS", balance: 5000000 },
+  { id: "acc-1", name: "Основной счёт", type: "bank", currency: "UZS", balance: 5000000, isPrimary: true },
   { id: "acc-2", name: "Касса", type: "cash", currency: "UZS", balance: 1200000 },
   { id: "acc-3", name: "Payme", type: "ewallet", currency: "UZS", balance: 800000 },
 ]

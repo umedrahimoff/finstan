@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -63,6 +63,17 @@ export function SettingsDataPage() {
   const addTransactionsBatch = useCompanyDataStore((s) => s.addTransactionsBatch)
   const addCounterparty = useCompanyDataStore((s) => s.addCounterparty)
 
+  const primaryAccount = useMemo(
+    () => accounts.find((a) => a.isPrimary) ?? accounts[0],
+    [accounts]
+  )
+
+  useEffect(() => {
+    if (importDialogOpen && primaryAccount && !importAccountId) {
+      setImportAccountId(primaryAccount.id)
+    }
+  }, [importDialogOpen, primaryAccount, importAccountId])
+
   const handleOpenReset = () => {
     setSelectedCompanyIds(new Set(companies.map((c) => c.id)))
     setResetDialogOpen(true)
@@ -107,7 +118,7 @@ export function SettingsDataPage() {
           setImportError(errors.join(". "))
         } else {
           setImportExportRURows(rows)
-          if (accounts.length > 0 && !importAccountId) setImportAccountId(accounts[0].id)
+          if (primaryAccount && !importAccountId) setImportAccountId(primaryAccount.id)
         }
       }
       reader.readAsArrayBuffer(file)
@@ -120,7 +131,7 @@ export function SettingsDataPage() {
           setImportError(errors.join(". "))
         } else {
           setImportBankRows(rows)
-          if (accounts.length > 0 && !importAccountId) setImportAccountId(accounts[0].id)
+          if (primaryAccount && !importAccountId) setImportAccountId(primaryAccount.id)
         }
       }
       reader.readAsText(file, "UTF-8")

@@ -12,6 +12,8 @@ export interface Transaction {
   counterpartyId?: string
   projectId?: string
   comment?: string
+  /** Ссылка на запланированный платёж при подтверждении из календаря */
+  plannedPaymentId?: string
 }
 
 export interface Account {
@@ -20,6 +22,8 @@ export interface Account {
   type: string
   currency: string
   balance: number
+  /** Основной счёт компании (по умолчанию в формах) */
+  isPrimary?: boolean
 }
 
 export interface Category {
@@ -39,6 +43,8 @@ export interface Counterparty {
 
 export type PlannedPaymentType = "income" | "expense"
 
+export type RecurrenceType = "none" | "daily" | "weekly" | "monthly" | "yearly"
+
 export interface PlannedPayment {
   id: string
   date: string
@@ -49,6 +55,10 @@ export interface PlannedPayment {
   accountId?: string
   categoryId?: string
   counterpartyId?: string
+  /** Повторение: none = разовый */
+  recurrence?: RecurrenceType
+  /** Дата окончания повторения (YYYY-MM-DD) */
+  repeatUntil?: string
 }
 
 export interface Budget {

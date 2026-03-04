@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { MoreHorizontal, Pencil, Trash2, Plus } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, Plus, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -57,6 +57,8 @@ export function BudgetsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const [deletingBudget, setDeletingBudget] = useState<Budget | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deletingBatch, setDeletingBatch] = useState(false)
 
   const getCategoryName = (id: string) =>
     categories.find((c) => c.id === id)?.name ?? "—"
@@ -85,6 +87,29 @@ export function BudgetsPage() {
     }
   }
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === budgets.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(budgets.map((b) => b.id)))
+    }
+  }
+
+  const handleBatchDeleteConfirm = () => {
+    selectedIds.forEach((id) => deleteBudget(id))
+    setSelectedIds(new Set())
+    setDeletingBatch(false)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -105,10 +130,41 @@ export function BudgetsPage() {
         </Button>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-4 rounded-md border bg-muted/50 px-4 py-2">
+          <span className="text-sm font-medium">Выбрано: {selectedIds.size}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setDeletingBatch(true)}
+          >
+            <Trash2 className="mr-2 size-4" />
+            Удалить выбранные
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+            Снять выбор
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <button
+                  type="button"
+                  className="flex items-center justify-center"
+                  onClick={toggleSelectAll}
+                >
+                  {selectedIds.size === budgets.length && budgets.length > 0 ? (
+                    <CheckSquare className="size-4 text-primary" />
+                  ) : (
+                    <Square className="size-4 text-muted-foreground" />
+                  )}
+                </button>
+              </TableHead>
               <TableHead>Категория</TableHead>
               <TableHead>Период</TableHead>
               <TableHead className="text-right">Лимит</TableHead>
@@ -121,7 +177,7 @@ export function BudgetsPage() {
             {budgets.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Бюджетов пока нет. Добавьте первый бюджет по категории расходов.
@@ -134,6 +190,19 @@ export function BudgetsPage() {
                 const over = spent > budget.amount
                 return (
                   <TableRow key={budget.id}>
+                    <TableCell className="w-[40px]">
+                      <button
+                        type="button"
+                        className="flex items-center justify-center"
+                        onClick={() => toggleSelect(budget.id)}
+                      >
+                        {selectedIds.has(budget.id) ? (
+                          <CheckSquare className="size-4 text-primary" />
+                        ) : (
+                          <Square className="size-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </TableCell>
                     <TableCell>
                       <Link
                         to={`/transactions?category=${budget.categoryId}`}
@@ -237,6 +306,29 @@ export function BudgetsPage() {
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deletingBatch}
+        onOpenChange={(open) => !open && setDeletingBatch(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные бюджеты?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Будет удалено бюджетов: {selectedIds.size}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Удалить

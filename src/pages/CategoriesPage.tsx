@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { MoreHorizontal, Pencil, Trash2, Plus, ArrowDownLeft, ArrowUpRight } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, Plus, ArrowDownLeft, ArrowUpRight, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -61,6 +61,8 @@ export function CategoriesPage() {
     id: string
     name: string
   } | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deletingBatch, setDeletingBatch] = useState(false)
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all")
 
   const filteredCategories =
@@ -99,6 +101,29 @@ export function CategoriesPage() {
     }
   }
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredCategories.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredCategories.map((c) => c.id)))
+    }
+  }
+
+  const handleBatchDeleteConfirm = () => {
+    selectedIds.forEach((id) => deleteCategory(id))
+    setSelectedIds(new Set())
+    setDeletingBatch(false)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -122,10 +147,41 @@ export function CategoriesPage() {
         </TabsList>
       </Tabs>
 
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-4 rounded-md border bg-muted/50 px-4 py-2">
+          <span className="text-sm font-medium">Выбрано: {selectedIds.size}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setDeletingBatch(true)}
+          >
+            <Trash2 className="mr-2 size-4" />
+            Удалить выбранные
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+            Снять выбор
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <button
+                  type="button"
+                  className="flex items-center justify-center"
+                  onClick={toggleSelectAll}
+                >
+                  {selectedIds.size === filteredCategories.length && filteredCategories.length > 0 ? (
+                    <CheckSquare className="size-4 text-primary" />
+                  ) : (
+                    <Square className="size-4 text-muted-foreground" />
+                  )}
+                </button>
+              </TableHead>
               <TableHead>Название</TableHead>
               <TableHead>Тип</TableHead>
               <TableHead className="text-right">Сумма по операциям</TableHead>
@@ -136,7 +192,7 @@ export function CategoriesPage() {
             {filteredCategories.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Категорий пока нет. Добавьте первую категорию.
@@ -147,6 +203,19 @@ export function CategoriesPage() {
                 const total = getCategoryTotal(cat.id)
                 return (
                   <TableRow key={cat.id}>
+                    <TableCell className="w-[40px]">
+                      <button
+                        type="button"
+                        className="flex items-center justify-center"
+                        onClick={() => toggleSelect(cat.id)}
+                      >
+                        {selectedIds.has(cat.id) ? (
+                          <CheckSquare className="size-4 text-primary" />
+                        ) : (
+                          <Square className="size-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </TableCell>
                     <TableCell>
                       <Link
                         to={`/transactions?category=${cat.id}`}
@@ -242,6 +311,29 @@ export function CategoriesPage() {
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deletingBatch}
+        onOpenChange={(open) => !open && setDeletingBatch(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные категории?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Будет удалено категорий: {selectedIds.size}. Операции останутся в истории.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Удалить

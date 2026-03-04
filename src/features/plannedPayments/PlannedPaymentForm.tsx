@@ -8,6 +8,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { AmountInput } from "@/components/AmountInput"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CreatableSelect } from "@/components/CreatableSelect"
 import type { PlannedPaymentFormValues } from "./plannedPaymentFormSchema"
 import { plannedPaymentFormSchema } from "./plannedPaymentFormSchema"
 import { useAccountsStore } from "@/stores/useAccountsStore"
@@ -31,6 +33,10 @@ interface PlannedPaymentFormProps {
   onSubmit: (values: PlannedPaymentFormValues) => void
   onCancel: () => void
   onDelete?: () => void
+  /** Подтвердить платёж и добавить в операции (показывается при редактировании) */
+  onConfirm?: (values: PlannedPaymentFormValues) => void
+  /** Кнопка подтверждения отключена (уже добавлено в операции) */
+  confirmDisabled?: boolean
 }
 
 export function PlannedPaymentForm({
@@ -38,10 +44,15 @@ export function PlannedPaymentForm({
   onSubmit,
   onCancel,
   onDelete,
+  onConfirm,
+  confirmDisabled = false,
 }: PlannedPaymentFormProps) {
   const accounts = useAccountsStore((s) => s.accounts)
+  const primaryAccountId = accounts.find((a) => a.isPrimary)?.id ?? accounts[0]?.id ?? ""
   const categories = useCategoriesStore((s) => s.categories)
+  const addCategory = useCategoriesStore((s) => s.addCategory)
   const counterparties = useCounterpartiesStore((s) => s.counterparties)
+  const addCounterparty = useCounterpartiesStore((s) => s.addCounterparty)
 
   const form = useForm<PlannedPaymentFormValues>({
     resolver: zodResolver(plannedPaymentFormSchema),
@@ -51,69 +62,62 @@ export function PlannedPaymentForm({
       currency: defaultValues?.currency ?? "UZS",
       type: defaultValues?.type ?? "expense",
       title: defaultValues?.title ?? "",
-      accountId: defaultValues?.accountId ?? "",
+      accountId: defaultValues?.accountId ?? primaryAccountId,
       categoryId: defaultValues?.categoryId ?? "",
       counterpartyId: defaultValues?.counterpartyId ?? "",
+      recurrence: defaultValues?.recurrence ?? "none",
+      repeatUntil: defaultValues?.repeatUntil ?? "",
     },
   })
 
   const type = form.watch("type")
+  const recurrence = form.watch("recurrence")
   const categoryItems = categories.filter((c) => c.type === type)
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Дата</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Тип</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-                defaultValue={field.value}
-              >
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Дата</FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <Input type="date" {...field} />
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="income">Доход</SelectItem>
-                  <SelectItem value="expense">Расход</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Описание</FormLabel>
-              <FormControl>
-                <Input placeholder="Оплата аренды" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Тип</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите тип" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="income">Доход</SelectItem>
+                    <SelectItem value="expense">Расход</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -122,13 +126,10 @@ export function PlannedPaymentForm({
               <FormItem>
                 <FormLabel>Сумма</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    min={1}
-                    {...field}
-                    onChange={(e) =>
-                      field.onChange(e.target.valueAsNumber || 0)
-                    }
+                  <AmountInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="1 000 000"
                   />
                 </FormControl>
                 <FormMessage />
@@ -164,6 +165,7 @@ export function PlannedPaymentForm({
             )}
           />
         </div>
+
         <FormField
           control={form.control}
           name="accountId"
@@ -192,30 +194,23 @@ export function PlannedPaymentForm({
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="categoryId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Категория</FormLabel>
-              <Select
-                onValueChange={(v) => field.onChange(v === NONE_VALUE ? "" : v)}
-                value={field.value || NONE_VALUE}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите категорию" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value={NONE_VALUE}>Не выбрано</SelectItem>
-                  {categoryItems.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <CreatableSelect
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  items={categoryItems}
+                  onCreate={(name) => addCategory({ name, type }).id}
+                  placeholder="Поиск или создание категории..."
+                  createLabel="Создать категорию"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -226,31 +221,106 @@ export function PlannedPaymentForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Контрагент</FormLabel>
-              <Select
-                onValueChange={(v) => field.onChange(v === NONE_VALUE ? "" : v)}
-                value={field.value || NONE_VALUE}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите контрагента" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value={NONE_VALUE}>Не выбрано</SelectItem>
-                  {counterparties.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <CreatableSelect
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  items={counterparties}
+                  onCreate={(name) => addCounterparty({ name, type: "client" }).id}
+                  placeholder="Поиск или создание контрагента..."
+                  createLabel="Создать контрагента"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <div className="flex justify-between pt-4">
-          <div>
-            {onDelete && (
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="recurrence"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Повторять</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value ?? "none"}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">Разовый</SelectItem>
+                    <SelectItem value="daily">Ежедневно</SelectItem>
+                    <SelectItem value="weekly">Еженедельно</SelectItem>
+                    <SelectItem value="monthly">Ежемесячно</SelectItem>
+                    <SelectItem value="yearly">Ежегодно</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {recurrence && recurrence !== "none" && (
+            <FormField
+              control={form.control}
+              name="repeatUntil"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Повторять до</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
+
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Комментарий</FormLabel>
+              <FormControl>
+                <Input placeholder="Комментарий к операции" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex flex-col gap-3 pt-4">
+          {onConfirm && (
+            <>
+              <Button
+                type="button"
+                disabled={confirmDisabled}
+                onClick={() => {
+                  if (confirmDisabled) return
+                  const values = form.getValues()
+                  if (!values.accountId) {
+                    form.setError("accountId", { message: "Укажите счёт для добавления в операции" })
+                    return
+                  }
+                  onConfirm(values)
+                }}
+              >
+                {confirmDisabled ? "Уже добавлено в операции" : "Подтвердить и добавить в операции"}
+              </Button>
+              {confirmDisabled && (
+                <p className="text-sm text-muted-foreground">
+                  Операция по этому платежу уже существует
+                </p>
+              )}
+            </>
+          )}
+          <div className="flex justify-between items-center">
+            {onDelete ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -259,13 +329,15 @@ export function PlannedPaymentForm({
               >
                 Удалить
               </Button>
+            ) : (
+              <div />
             )}
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Отмена
-            </Button>
-            <Button type="submit">Сохранить</Button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Отмена
+              </Button>
+              <Button type="submit">Сохранить</Button>
+            </div>
           </div>
         </div>
       </form>

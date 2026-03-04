@@ -8,7 +8,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Pencil, Copy, Trash2, Plus } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Pencil, Copy, Trash2, Plus, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -96,6 +96,7 @@ export function TransactionsPage() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "date", desc: true },
   ])
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [globalFilter, setGlobalFilter] = useState("")
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [accountFilter, setAccountFilter] = useState<string>(accountFromUrl ?? "all")
@@ -122,9 +123,46 @@ export function TransactionsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTx, setEditingTx] = useState<Transaction | null>(null)
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null)
+  const [deletingBatch, setDeletingBatch] = useState(false)
 
   const columns: ColumnDef<Transaction>[] = useMemo(
     () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <button
+            type="button"
+            className="flex items-center justify-center"
+            onClick={() =>
+              table.getIsAllPageRowsSelected()
+                ? table.toggleAllPageRowsSelected(false)
+                : table.toggleAllPageRowsSelected(true)
+            }
+          >
+            {table.getIsAllPageRowsSelected() ? (
+              <CheckSquare className="size-4 text-primary" />
+            ) : (
+              <Square className="size-4 text-muted-foreground" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <button
+            type="button"
+            className="flex items-center justify-center"
+            onClick={(e) => {
+              e.stopPropagation()
+              row.toggleSelected(!row.getIsSelected())
+            }}
+          >
+            {row.getIsSelected() ? (
+              <CheckSquare className="size-4 text-primary" />
+            ) : (
+              <Square className="size-4 text-muted-foreground" />
+            )}
+          </button>
+        ),
+      },
       {
         accessorKey: "date",
         header: ({ column }) => (
@@ -319,13 +357,18 @@ export function TransactionsPage() {
   const table = useReactTable({
     data: filteredTransactions,
     columns,
-    state: { sorting },
+    state: { sorting, rowSelection },
     onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    enableRowSelection: true,
+    getRowId: (row) => row.id,
   })
 
   const sortedRows = table.getRowModel().rows
+  const selectedRows = table.getFilteredSelectedRowModel().rows
+  const selectedCount = selectedRows.length
 
   const handleCreate = () => {
     setEditingTx(null)
@@ -346,6 +389,12 @@ export function TransactionsPage() {
       deleteTransaction(deletingTx.id)
       setDeletingTx(null)
     }
+  }
+
+  const handleBatchDeleteConfirm = () => {
+    selectedRows.forEach((row) => deleteTransaction(row.original.id))
+    table.toggleAllPageRowsSelected(false)
+    setDeletingBatch(false)
   }
 
   const formDefaultValues = editingTx
@@ -452,6 +501,30 @@ export function TransactionsPage() {
         </Select>
       </div>
 
+      {selectedCount > 0 && (
+        <div className="flex items-center gap-4 rounded-md border bg-muted/50 px-4 py-2">
+          <span className="text-sm font-medium">
+            Выбрано: {selectedCount}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setDeletingBatch(true)}
+          >
+            <Trash2 className="mr-2 size-4" />
+            Удалить выбранные
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => table.toggleAllPageRowsSelected(false)}
+          >
+            Снять выбор
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -525,6 +598,29 @@ export function TransactionsPage() {
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deletingBatch}
+        onOpenChange={(open) => !open && setDeletingBatch(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить выбранные операции?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Будет удалено операций: {selectedCount}. Действие необратимо.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Удалить

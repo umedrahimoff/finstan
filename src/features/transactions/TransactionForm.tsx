@@ -45,6 +45,15 @@ export function TransactionForm({
   onSubmit,
   onCancel,
 }: TransactionFormProps) {
+  const accounts = useAccountsStore((s) => s.accounts)
+  const primaryAccountId = accounts.find((a) => a.isPrimary)?.id ?? accounts[0]?.id ?? ""
+  const categories = useCategoriesStore((s) => s.categories)
+  const addCategory = useCategoriesStore((s) => s.addCategory)
+  const counterparties = useCounterpartiesStore((s) => s.counterparties)
+  const addCounterparty = useCounterpartiesStore((s) => s.addCounterparty)
+  const projects = useProjectsStore((s) => s.projects)
+  const addProject = useProjectsStore((s) => s.addProject)
+
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
     defaultValues: {
@@ -52,7 +61,7 @@ export function TransactionForm({
       type: defaultValues?.type ?? "expense",
       amount: defaultValues?.amount ?? 0,
       currency: defaultValues?.currency ?? "UZS",
-      accountId: defaultValues?.accountId ?? "",
+      accountId: defaultValues?.accountId ?? primaryAccountId,
       toAccountId: defaultValues?.toAccountId ?? "",
       categoryId: defaultValues?.categoryId ?? "",
       counterpartyId: defaultValues?.counterpartyId ?? "",
@@ -62,15 +71,7 @@ export function TransactionForm({
   })
 
   const type = form.watch("type")
-  const categories = useCategoriesStore((s) => s.categories)
-  const addCategory = useCategoriesStore((s) => s.addCategory)
-  const counterparties = useCounterpartiesStore((s) => s.counterparties)
-  const addCounterparty = useCounterpartiesStore((s) => s.addCounterparty)
-  const projects = useProjectsStore((s) => s.projects)
-  const addProject = useProjectsStore((s) => s.addProject)
-
   const categoryItems = categories.filter((c) => c.type === type)
-  const accounts = useAccountsStore((s) => s.accounts)
 
   return (
     <Form {...form}>

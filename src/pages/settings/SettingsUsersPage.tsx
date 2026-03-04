@@ -125,7 +125,9 @@ export function SettingsUsersPage() {
     }
   }
 
-  const isAdmin = role === "admin"
+  const isAdmin =
+    role === "admin" ||
+    (!!user && users.length === 1 && users[0].uid === user.uid)
 
   return (
     <div className="space-y-6">
@@ -152,12 +154,12 @@ export function SettingsUsersPage() {
           )}
         </CardHeader>
         <CardContent>
-          {!isAdmin ? (
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Загрузка...</p>
+          ) : !isAdmin ? (
             <p className="text-sm text-muted-foreground">
               Только администратор может управлять пользователями.
             </p>
-          ) : loading ? (
-            <p className="text-sm text-muted-foreground">Загрузка...</p>
           ) : users.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Users className="mb-4 size-12 text-muted-foreground/50" />
