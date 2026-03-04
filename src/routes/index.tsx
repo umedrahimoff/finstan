@@ -13,6 +13,11 @@ import { ReportsPage } from "@/pages/ReportsPage"
 import { AnalyticsPage } from "@/pages/AnalyticsPage"
 import { ProjectsPage } from "@/pages/ProjectsPage"
 import { SettingsPage } from "@/pages/SettingsPage"
+import { SettingsProfilePage } from "@/pages/settings/SettingsProfilePage"
+import { SettingsGeneralPage } from "@/pages/settings/SettingsGeneralPage"
+import { SettingsDataPage } from "@/pages/settings/SettingsDataPage"
+import { SettingsUsersPage } from "@/pages/settings/SettingsUsersPage"
+import { SettingsAboutPage } from "@/pages/settings/SettingsAboutPage"
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -34,7 +39,18 @@ export const router = createBrowserRouter([
       { path: "reports", element: <ReportsPage /> },
       { path: "analytics", element: <AnalyticsPage /> },
       { path: "projects", element: <ProjectsPage /> },
-      { path: "settings", element: <SettingsPage /> },
+      {
+        path: "settings",
+        element: <SettingsPage />,
+        children: [
+          { index: true, element: <Navigate to="/settings/profile" replace /> },
+          { path: "profile", element: <SettingsProfilePage /> },
+          { path: "general", element: <SettingsGeneralPage /> },
+          { path: "data", element: <SettingsDataPage /> },
+          { path: "users", element: <SettingsUsersPage /> },
+          { path: "about", element: <SettingsAboutPage /> },
+        ],
+      },
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> },

@@ -1,6 +1,8 @@
 import { useState } from "react"
-import { Link, Outlet } from "react-router-dom"
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react"
+import { Link, Outlet, useNavigate } from "react-router-dom"
+import { ArrowDownLeft, ArrowUpRight, LogOut, User } from "lucide-react"
+import { signOut } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { Button } from "@/components/ui/button"
@@ -10,6 +12,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/providers/AuthProvider"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { useAccountsStore } from "@/stores/useAccountsStore"
 import { TransactionFormDialog } from "@/features/transactions/TransactionFormDialog"
@@ -18,10 +27,17 @@ import { calculateAccountBalance } from "@/lib/accountBalance"
 import { formatAmount, formatCompact } from "@/lib/currency"
 
 export function AppLayout() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [quickAddType, setQuickAddType] = useState<"income" | "expense" | null>(null)
   const addTransaction = useTransactionsStore((s) => s.addTransaction)
   const accounts = useAccountsStore((s) => s.accounts)
   const transactions = useTransactionsStore((s) => s.transactions)
+
+  const handleLogout = () => {
+    signOut(auth)
+    navigate("/login", { replace: true })
+  }
 
   const handleQuickAddSubmit = (values: TransactionFormValues) => {
     addTransaction(values)
@@ -87,22 +103,53 @@ export function AppLayout() {
             <div className="flex gap-2">
               <Button
                 size="sm"
-              variant="outline"
-              className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
-              onClick={() => setQuickAddType("income")}
-            >
-              <ArrowDownLeft className="mr-1.5 size-4" />
-              Доход
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-              onClick={() => setQuickAddType("expense")}
-            >
-              <ArrowUpRight className="mr-1.5 size-4" />
-              Расход
-            </Button>
+                variant="outline"
+                className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                onClick={() => setQuickAddType("income")}
+              >
+                <ArrowDownLeft className="mr-1.5 size-4" />
+                Доход
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                onClick={() => setQuickAddType("expense")}
+              >
+                <ArrowUpRight className="mr-1.5 size-4" />
+                Расход
+              </Button>
+            </div>
+            <div className="ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    {user?.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt=""
+                        className="size-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-8 items-center justify-center rounded-full bg-muted">
+                        <User className="size-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings/profile">Профиль</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings">Настройки</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 size-4" />
+                    Выйти
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>

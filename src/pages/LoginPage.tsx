@@ -15,6 +15,9 @@ import { auth } from "@/lib/firebase"
 
 function getAuthErrorMessage(err: AuthError): string {
   const code = err.code
+  if (code === "auth/popup-blocked") return "Всплывающее окно заблокировано. Разрешите всплывающие окна для этого сайта."
+  if (code === "auth/cancelled-popup-request") return "Вход отменён"
+  if (code === "auth/popup-closed-by-user") return "Окно входа закрыто"
   if (code === "auth/invalid-email") return "Неверный формат email"
   if (code === "auth/user-disabled") return "Аккаунт отключён"
   if (code === "auth/user-not-found") return "Пользователь не найден"
@@ -72,13 +75,12 @@ export function LoginPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold">Finstan</h1>
           <p className="text-muted-foreground">
-            {mode === "login" ? "Войдите в аккаунт" : "Создайте аккаунт"}
+            Войдите через Google
           </p>
         </div>
 
         <Button
           type="button"
-          variant="outline"
           className="w-full"
           onClick={handleGoogleAuth}
           disabled={loading}
