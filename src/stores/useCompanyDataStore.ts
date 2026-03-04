@@ -9,7 +9,7 @@ import type {
   PlannedPayment,
   Project,
 } from "@/types"
-import { defaultCompanyData, getInitialCompanyData } from "@/data/defaultCompanyData"
+import { defaultCompanyData, getEmptyCompanyData, getInitialCompanyData } from "@/data/defaultCompanyData"
 import { useCompanyStore } from "@/stores/useCompanyStore"
 
 export type CompanyData = {
@@ -58,6 +58,7 @@ interface CompanyDataState {
   updateCounterparty: (id: string, cp: Partial<Omit<Counterparty, "id">>) => void
   deleteCounterparty: (id: string) => void
   addTransaction: (tx: Omit<Transaction, "id">) => void
+  addTransactionsBatch: (txs: Omit<Transaction, "id">[]) => void
   updateTransaction: (id: string, tx: Partial<Transaction>) => void
   deleteTransaction: (id: string) => void
   duplicateTransaction: (id: string) => void
@@ -121,7 +122,7 @@ export const useCompanyDataStore = create<CompanyDataState>()(
         set((state) => ({
           byCompany: {
             ...state.byCompany,
-            [companyId]: getInitialCompanyData(companyId),
+            [companyId]: getEmptyCompanyData(),
           },
         }))
       },
@@ -130,7 +131,7 @@ export const useCompanyDataStore = create<CompanyDataState>()(
         set((state) => {
           const next = { ...state.byCompany }
           for (const id of companyIds) {
-            next[id] = getInitialCompanyData(id)
+            next[id] = getEmptyCompanyData()
           }
           return { byCompany: next }
         })
@@ -294,6 +295,21 @@ export const useCompanyDataStore = create<CompanyDataState>()(
               [companyId]: {
                 ...data,
                 transactions: [{ ...tx, id }, ...data.transactions],
+              },
+            },
+          }
+        }),
+      addTransactionsBatch: (txs) =>
+        set((state) => {
+          const companyId = getCompanyId()
+          const data = getOrInitCompany(state, companyId)
+          const newTxs = txs.map((tx) => ({ ...tx, id: generateId("tx") }))
+          return {
+            byCompany: {
+              ...state.byCompany,
+              [companyId]: {
+                ...data,
+                transactions: [...newTxs, ...data.transactions],
               },
             },
           }

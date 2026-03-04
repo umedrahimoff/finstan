@@ -34,7 +34,7 @@ export const mockPlannedPayments: PlannedPayment[] = [
     amount: 1200000,
     currency: "UZS",
     type: "income",
-    title: "Поступление по договору",
+    title: "Доход по договору",
     counterpartyId: "cp-1",
   },
 ]

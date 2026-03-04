@@ -8,6 +8,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { AmountInput } from "@/components/AmountInput"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -32,7 +33,7 @@ interface TransactionFormProps {
 }
 
 const TRANSACTION_TYPES = [
-  { value: "income", label: "Поступление" },
+  { value: "income", label: "Доход" },
   { value: "expense", label: "Расход" },
   { value: "transfer", label: "Перевод" },
 ] as const
@@ -126,11 +127,10 @@ export function TransactionForm({
               <FormItem>
                 <FormLabel>Сумма</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    min={1}
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                  <AmountInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="1 000 000"
                   />
                 </FormControl>
                 <FormMessage />

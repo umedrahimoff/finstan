@@ -41,6 +41,11 @@ export function getInitialCompanyData(companyId: string): CompanyData {
       projects: [...defaultCompanyData.projects],
     }
   }
+  return getEmptyCompanyData()
+}
+
+/** Пустые данные для сброса (очистка до нуля) */
+export function getEmptyCompanyData(): CompanyData {
   return {
     accounts: [],
     categories: [],

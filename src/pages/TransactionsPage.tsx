@@ -53,7 +53,7 @@ import { TransactionFormDialog } from "@/features/transactions/TransactionFormDi
 import type { TransactionFormValues } from "@/features/transactions/transactionFormSchema"
 
 const TYPE_LABELS: Record<TransactionType, string> = {
-  income: "Поступление",
+  income: "Доход",
   expense: "Расход",
   transfer: "Перевод",
 }

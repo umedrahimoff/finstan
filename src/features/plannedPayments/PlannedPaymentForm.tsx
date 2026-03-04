@@ -93,7 +93,7 @@ export function PlannedPaymentForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="income">Поступление</SelectItem>
+                  <SelectItem value="income">Доход</SelectItem>
                   <SelectItem value="expense">Расход</SelectItem>
                 </SelectContent>
               </Select>

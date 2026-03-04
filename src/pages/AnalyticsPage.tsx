@@ -23,6 +23,7 @@ import {
 } from "recharts"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
+import { formatAmount } from "@/lib/currency"
 import {
   filterTransactionsByPeriod,
   aggregateByCategory,
@@ -187,7 +188,7 @@ export function AnalyticsPage() {
                       </Pie>
                       <Tooltip
                         formatter={(v) =>
-                          (v ?? 0).toLocaleString("uz-UZ") + " UZS"
+                          formatAmount(Number(v ?? 0), "UZS")
                         }
                       />
                     </PieChart>
@@ -226,7 +227,7 @@ export function AnalyticsPage() {
                       </Pie>
                       <Tooltip
                         formatter={(v) =>
-                          (v ?? 0).toLocaleString("uz-UZ") + " UZS"
+                          formatAmount(Number(v ?? 0), "UZS")
                         }
                       />
                     </PieChart>
@@ -266,7 +267,7 @@ export function AnalyticsPage() {
                   />
                   <Tooltip
                     formatter={(v) =>
-                      (v ?? 0).toLocaleString("uz-UZ") + " UZS"
+                      formatAmount(Number(v ?? 0), "UZS")
                     }
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
