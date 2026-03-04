@@ -1,33 +1,15 @@
-import { useState, useEffect, useCallback } from "react"
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Loader2 } from "lucide-react"
-import { setToken } from "@/api/client"
 
 const INVITE_ERROR = "Нет доступа. Для входа нужно приглашение от администратора. Обратитесь к владельцу приложения."
 
-declare global {
-  interface Window {
-    TelegramLoginWidget?: {
-      dataOnauth: (user: TelegramAuthUser) => void
-    }
-  }
-}
-
-interface TelegramAuthUser {
-  id: number
-  first_name: string
-  last_name?: string
-  username?: string
-  photo_url?: string
-  auth_date: number
-  hash: string
+function generateState(): string {
+  return crypto.randomUUID()
 }
 
 export function LoginPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/"
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -38,71 +20,17 @@ export function LoginPage() {
     }
   }, [searchParams, setSearchParams])
 
-  const handleTelegramAuth = useCallback(
-    async (tgUser: TelegramAuthUser) => {
-      setError("")
-      setLoading(true)
-      try {
-        const data: Record<string, string> = {
-          id: String(tgUser.id),
-          first_name: tgUser.first_name,
-          auth_date: String(tgUser.auth_date),
-          hash: tgUser.hash,
-        }
-        if (tgUser.last_name) data.last_name = tgUser.last_name
-        if (tgUser.username) data.username = tgUser.username
-        if (tgUser.photo_url) data.photo_url = tgUser.photo_url
-
-        const base = typeof window !== "undefined" ? window.location.origin : ""
-        const res = await fetch(`${base}/api/telegram-auth`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        })
-        const json = await res.json()
-        if (!res.ok) {
-          const msg = json.error === "INVITE_REQUIRED" ? INVITE_ERROR : (json.error || "Ошибка авторизации")
-          throw new Error(msg)
-        }
-        setToken(json.token)
-        navigate(from, { replace: true })
-        window.location.reload()
-      } catch (err) {
-        setError((err as Error).message)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [navigate, from]
-  )
-
-  useEffect(() => {
-    const botName = import.meta.env.VITE_TELEGRAM_BOT_NAME
+  const botName = import.meta.env.VITE_TELEGRAM_BOT_NAME
+  const handleLogin = () => {
     if (!botName) {
       setError("Не настроен VITE_TELEGRAM_BOT_NAME")
       return
     }
-
-    ;(window as Window & { __tgAuthCallback?: (u: TelegramAuthUser) => void }).__tgAuthCallback =
-      (u: TelegramAuthUser) => handleTelegramAuth(u)
-
-    const container = document.getElementById("telegram-login")
-    if (!container) return
-
-    const script = document.createElement("script")
-    script.src = "https://telegram.org/js/telegram-widget.js?22"
-    script.async = true
-    script.setAttribute("data-telegram-login", botName)
-    script.setAttribute("data-size", "large")
-    script.setAttribute("data-onauth", "window.__tgAuthCallback(user)")
-    script.setAttribute("data-request-access", "write")
-    container.appendChild(script)
-
-    return () => {
-      script.remove()
-      container.innerHTML = ""
-    }
-  }, [handleTelegramAuth])
+    setError("")
+    setLoading(true)
+    const state = generateState()
+    window.location.href = `https://t.me/${botName}?start=login_${state}`
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
@@ -118,16 +46,27 @@ export function LoginPage() {
           </div>
         )}
 
-        {loading ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="size-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div
-            id="telegram-login"
-            className="flex justify-center [&_iframe]:!h-12 [&_iframe]:!min-h-12"
-          />
-        )}
+        <button
+          type="button"
+          onClick={handleLogin}
+          disabled={loading || !botName}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0088cc] px-4 py-3 text-white transition hover:bg-[#0077b5] disabled:opacity-50"
+        >
+          {loading ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            <>
+              <svg className="size-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+              </svg>
+              Войти через Telegram
+            </>
+          )}
+        </button>
+
+        <p className="text-center text-xs text-muted-foreground">
+          Откроется Telegram. Подтвердите вход в боте и перейдите по ссылке.
+        </p>
       </div>
     </div>
   )

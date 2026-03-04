@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AppLayout } from "@/layouts/AppLayout"
 import { LoginPage } from "@/pages/LoginPage"
+import { AuthCallbackPage } from "@/pages/AuthCallbackPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { TransactionsPage } from "@/pages/TransactionsPage"
 import { AccountsPage } from "@/pages/AccountsPage"
@@ -21,6 +22,7 @@ import { SettingsAboutPage } from "@/pages/settings/SettingsAboutPage"
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
+  { path: "/auth", element: <AuthCallbackPage /> },
   {
     path: "/",
     element: (
