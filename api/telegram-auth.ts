@@ -1,6 +1,7 @@
 import { createHash, createHmac } from "crypto"
-import * as admin from "firebase-admin"
 import type { VercelRequest, VercelResponse } from "@vercel/node"
+import { sql } from "../lib/db"
+import { createToken } from "../lib/jwt"
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const GLOBAL_ADMIN_TG_ID = process.env.TELEGRAM_GLOBAL_ADMIN_ID || ""
@@ -16,6 +17,10 @@ function checkTelegramAuth(data: Record<string, string>): boolean {
     .join("\n")
   const hmac = createHmac("sha256", secret).update(checkString).digest("hex")
   return hmac === hash
+}
+
+function isGlobalAdmin(telegramId: string): boolean {
+  return !!telegramId && telegramId === GLOBAL_ADMIN_TG_ID
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -37,28 +42,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: "Invalid signature" })
   }
 
-  if (!admin.apps.length) {
-    const key = process.env.FIREBASE_SERVICE_ACCOUNT
-    if (!key) {
-      return res.status(500).json({ error: "Server misconfigured" })
-    }
-    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(key)) })
-  }
-
   const telegramId = data.id
   const uid = `tg_${telegramId}`
-
   const username = data.username
     ? String(data.username).trim().toLowerCase().replace(/^@/, "") || null
     : null
+  const firstName = data.first_name || null
+  const lastName = data.last_name || null
+  const photoUrl = data.photo_url || null
+  const displayName = [firstName, lastName].filter(Boolean).join(" ").trim() || null
 
-  const customToken = await admin.auth().createCustomToken(uid, {
-    telegram_id: telegramId,
+  const existing = await sql`SELECT * FROM users WHERE id = ${uid} LIMIT 1`
+  const existingUser = existing[0] as Record<string, unknown> | undefined
+
+  if (existingUser) {
+    const role =
+      isGlobalAdmin(telegramId) || isGlobalAdmin((existingUser.telegram_id as string) ?? "")
+        ? "admin"
+        : (existingUser.role as string) ?? null
+
+    await sql`
+      UPDATE users SET
+        username = ${username},
+        first_name = ${firstName},
+        last_name = ${lastName},
+        display_name = ${displayName},
+        photo_url = ${photoUrl},
+        role = ${role},
+        updated_at = NOW()
+      WHERE id = ${uid}
+    `
+  } else if (isGlobalAdmin(telegramId)) {
+    await sql`
+      INSERT INTO users (id, telegram_id, username, first_name, last_name, display_name, photo_url, role)
+      VALUES (${uid}, ${telegramId}, ${username}, ${firstName}, ${lastName}, ${displayName}, ${photoUrl}, 'admin')
+    `
+  } else {
+    const invite = username
+      ? await sql`SELECT * FROM invites WHERE username = ${username} LIMIT 1`
+      : []
+    const inv = invite[0] as Record<string, unknown> | undefined
+
+    if (!inv) {
+      return res.status(403).json({ error: "INVITE_REQUIRED" })
+    }
+
+    await sql`
+      INSERT INTO users (id, telegram_id, username, first_name, last_name, display_name, photo_url, role)
+      VALUES (${uid}, ${telegramId}, ${username}, ${firstName}, ${lastName}, ${displayName}, ${photoUrl}, ${inv.role as string})
+    `
+    await sql`DELETE FROM invites WHERE id = ${inv.id as string}`
+  }
+
+  const token = await createToken({
+    uid,
+    telegramId,
     username,
-    first_name: data.first_name || null,
-    last_name: data.last_name || null,
-    photo_url: data.photo_url || null,
+    firstName,
+    lastName,
+    photoUrl,
   })
 
-  return res.status(200).json({ token: customToken })
+  return res.status(200).json({ token })
 }

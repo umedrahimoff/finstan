@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom"
 import { Loader2 } from "lucide-react"
-import { signInWithCustomToken } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { setToken } from "@/api/client"
 
 const INVITE_ERROR = "Нет доступа. Для входа нужно приглашение от администратора. Обратитесь к владельцу приложения."
 
@@ -62,10 +61,12 @@ export function LoginPage() {
         })
         const json = await res.json()
         if (!res.ok) {
-          throw new Error(json.error || "Ошибка авторизации")
+          const msg = json.error === "INVITE_REQUIRED" ? INVITE_ERROR : (json.error || "Ошибка авторизации")
+          throw new Error(msg)
         }
-        await signInWithCustomToken(auth, json.token)
+        setToken(json.token)
         navigate(from, { replace: true })
+        window.location.reload()
       } catch (err) {
         setError((err as Error).message)
       } finally {

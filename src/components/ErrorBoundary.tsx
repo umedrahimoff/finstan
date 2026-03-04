@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
             {this.state.error?.message}
           </p>
           <p className="text-sm text-muted-foreground">
-            Проверьте переменные Firebase в настройках Vercel (Environment Variables)
+            Проверьте настройки приложения
           </p>
           <button
             type="button"

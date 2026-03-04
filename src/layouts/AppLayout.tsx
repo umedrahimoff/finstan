@@ -1,8 +1,7 @@
 import { useState } from "react"
 import { Link, Outlet, useNavigate } from "react-router-dom"
 import { ArrowDownLeft, ArrowUpRight, LogOut, User } from "lucide-react"
-import { signOut } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { clearToken } from "@/api/client"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { Button } from "@/components/ui/button"
@@ -35,8 +34,9 @@ export function AppLayout() {
   const transactions = useTransactionsStore((s) => s.transactions)
 
   const handleLogout = () => {
-    signOut(auth)
+    clearToken()
     navigate("/login", { replace: true })
+    window.location.reload()
   }
 
   const handleQuickAddSubmit = (values: TransactionFormValues) => {
