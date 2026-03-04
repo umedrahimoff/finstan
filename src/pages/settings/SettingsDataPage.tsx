@@ -36,7 +36,6 @@ import {
 } from "@/components/ui/table"
 import { useCompanyStore } from "@/stores/useCompanyStore"
 import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
-import { useAccountsStore } from "@/stores/useAccountsStore"
 import { parseBankCsv, type BankRow } from "@/lib/importBank"
 import { parseExportRU, type ExportRURow } from "@/lib/importExportRU"
 import { formatAmount } from "@/lib/currency"
@@ -58,7 +57,7 @@ export function SettingsDataPage() {
     [allCompanies]
   )
   const companyId = useCompanyStore((s) => s.currentCompanyId) ?? "default"
-  const accounts = useAccountsStore((s) => s.accounts)
+  const accounts = useCompanyDataStore((s) => s.getAccounts(companyId))
   const counterparties = useCompanyDataStore((s) => s.getCounterparties(companyId))
   const resetCompanyDataBatch = useCompanyDataStore((s) => s.resetCompanyDataBatch)
   const addTransactionsBatch = useCompanyDataStore((s) => s.addTransactionsBatch)
@@ -74,6 +73,13 @@ export function SettingsDataPage() {
       setImportAccountId(primaryAccount.id)
     }
   }, [importDialogOpen, primaryAccount, importAccountId])
+
+  useEffect(() => {
+    if (importDialogOpen && accounts.length > 0 && !importAccountId) {
+      const acc = accounts.find((a) => a.isPrimary) ?? accounts[0]
+      if (acc) setImportAccountId(acc.id)
+    }
+  }, [importDialogOpen, accounts, importAccountId])
 
   const handleOpenReset = () => {
     setSelectedCompanyIds(new Set(companies.map((c) => c.id)))
@@ -143,11 +149,12 @@ export function SettingsDataPage() {
     (s ?? "").replace(/[^\d-]/g, "").trim()
 
   const exportRUImportable = importExportRURows.filter((r) => r.type !== "transfer" && r.date)
+  const effectiveAccountId = importAccountId || primaryAccount?.id
   const handleImport = () => {
     const bankCount = importBankRows.filter((r) => r.debit > 0 || r.credit > 0).length
     const exportRUCount = exportRUImportable.length
     const totalCount = importFormat === "kapitalbank" ? bankCount : exportRUCount
-    if (totalCount === 0 || !importAccountId) return
+    if (totalCount === 0 || !effectiveAccountId) return
     setImporting(true)
     const nameToCpId = new Map<string, string>()
     for (const cp of counterparties) {
@@ -211,7 +218,7 @@ export function SettingsDataPage() {
         amount: t.amount,
         currency: "UZS",
         type: t.type,
-        accountId: importAccountId,
+        accountId: effectiveAccountId,
         counterpartyId: t.counterpartyId,
         comment: t.comment,
       }))
@@ -376,7 +383,7 @@ export function SettingsDataPage() {
               </p>
             ) : (
                 <Select
-                  value={importAccountId}
+                  value={importAccountId || primaryAccount?.id || ""}
                   onValueChange={setImportAccountId}
                 >
                   <SelectTrigger className="w-[200px]">
@@ -479,7 +486,7 @@ export function SettingsDataPage() {
                 (importFormat === "kapitalbank"
                   ? importBankRows.filter((r) => r.debit > 0 || r.credit > 0).length === 0
                   : exportRUImportable.length === 0) ||
-                !importAccountId ||
+                !effectiveAccountId ||
                 importing
               }
             >

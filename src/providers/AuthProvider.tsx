@@ -44,37 +44,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user])
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u)
-      setLoading(false)
-      if (u) {
-        ensureUserDoc(
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (!u) {
+        setUser(null)
+        setRole(null)
+        setProfile(null)
+        setLoading(false)
+        return
+      }
+      try {
+        const r = await ensureUserDoc(
           u.uid,
           u.email ?? null,
           u.displayName ?? null,
           u.photoURL ?? null
         )
-          .then((r) => {
-            setRole(r)
-            return getUserProfile(u.uid)
-          })
-          .then((p) => setProfile(p))
-          .catch(async (err) => {
-            if (err?.message === "INVITE_REQUIRED") {
-              await signOut(auth)
-              setUser(null)
-              setRole(null)
-              setProfile(null)
-              window.location.href = "/login?error=invite_required"
-            } else {
-              console.error("Auth init failed:", err)
-              setRole(null)
-              setProfile(null)
-            }
-          })
-      } else {
-        setRole(null)
-        setProfile(null)
+        setUser(u)
+        setRole(r)
+        const p = await getUserProfile(u.uid)
+        setProfile(p)
+      } catch (err) {
+        if ((err as Error)?.message === "INVITE_REQUIRED") {
+          await signOut(auth)
+          setUser(null)
+          setRole(null)
+          setProfile(null)
+          window.location.href = "/login?error=invite_required"
+        } else {
+          console.error("Auth init failed:", err)
+          setUser(null)
+          setRole(null)
+          setProfile(null)
+        }
+      } finally {
+        setLoading(false)
       }
     })
     return unsubscribe

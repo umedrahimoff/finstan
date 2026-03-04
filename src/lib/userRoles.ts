@@ -61,7 +61,7 @@ export async function ensureUserDoc(
     let role = isGlobalAdmin(email)
       ? "admin"
       : ((data.role as UserRole) ?? null)
-    if (!role) {
+    if (!role && isGlobalAdmin(email)) {
       const allSnap = await getDocs(collection(db, USERS_COLLECTION))
       if (allSnap.size === 1 && allSnap.docs[0].id === uid) {
         role = "admin"
@@ -113,26 +113,7 @@ export async function ensureUserDoc(
     return "admin"
   }
 
-  const adminsQuery = query(
-    collection(db, USERS_COLLECTION),
-    where("role", "==", "admin")
-  )
-  const adminsSnap = await getDocs(adminsQuery)
-  if (!adminsSnap.empty) {
-    throw new Error("INVITE_REQUIRED")
-  }
-
-  const [firstName, lastName] = parseDisplayName(displayName)
-  await setDoc(userRef, {
-    email,
-    displayName,
-    firstName,
-    lastName,
-    photoURL: photoURL ?? null,
-    role: "admin",
-    updatedAt: new Date().toISOString(),
-  })
-  return "admin"
+  throw new Error("INVITE_REQUIRED")
 }
 
 export async function getCurrentUserRole(uid: string): Promise<UserRole | null> {
@@ -142,8 +123,10 @@ export async function getCurrentUserRole(uid: string): Promise<UserRole | null> 
   if (isGlobalAdmin(data.email ?? null)) return "admin"
   const role = (data.role as UserRole) ?? null
   if (role === "admin") return "admin"
-  const allUsers = await getDocs(collection(db, USERS_COLLECTION))
-  if (allUsers.size === 1 && allUsers.docs[0].id === uid) return "admin"
+  if (isGlobalAdmin(data.email ?? null)) {
+    const allUsers = await getDocs(collection(db, USERS_COLLECTION))
+    if (allUsers.size === 1 && allUsers.docs[0].id === uid) return "admin"
+  }
   return role
 }
 
