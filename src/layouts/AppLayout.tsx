@@ -27,7 +27,7 @@ import { calculateAccountBalance } from "@/lib/accountBalance"
 import { formatAmount, formatCompact } from "@/lib/currency"
 
 export function AppLayout() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [quickAddType, setQuickAddType] = useState<"income" | "expense" | null>(null)
   const addTransaction = useTransactionsStore((s) => s.addTransaction)
@@ -125,9 +125,9 @@ export function AppLayout() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    {user?.photoURL ? (
+                    {(profile?.photoURL ?? user?.photoURL) ? (
                       <img
-                        src={user.photoURL}
+                        src={profile?.photoURL ?? user?.photoURL ?? ""}
                         alt=""
                         className="size-8 rounded-full object-cover"
                       />

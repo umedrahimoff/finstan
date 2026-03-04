@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/providers/AuthProvider"
-import { ensureUserDoc, updateUserProfile } from "@/lib/userRoles"
+import { updateUserProfile } from "@/lib/userRoles"
 
 function parseDisplayName(displayName: string | null): [string, string] {
   if (!displayName?.trim()) return ["", ""]
@@ -39,12 +39,6 @@ export function SettingsProfilePage() {
     setSaving(true)
     setError("")
     try {
-      await ensureUserDoc(
-        user.uid,
-        user.email ?? null,
-        user.displayName ?? null,
-        user.photoURL ?? null
-      )
       await updateUserProfile(user.uid, {
         firstName: firstName.trim() || null,
         lastName: lastName.trim() || null,
@@ -65,7 +59,7 @@ export function SettingsProfilePage() {
       <div>
         <h2 className="text-lg font-semibold">Профиль</h2>
         <p className="text-sm text-muted-foreground">
-          Имя, почта и другие данные вашего аккаунта
+          Имя и контактные данные вашего аккаунта
         </p>
       </div>
 
@@ -79,9 +73,9 @@ export function SettingsProfilePage() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-6">
             <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
-              {user.photoURL ? (
+              {(profile?.photoURL ?? user.photoURL) ? (
                 <img
-                  src={user.photoURL}
+                  src={profile?.photoURL ?? user.photoURL ?? ""}
                   alt=""
                   className="size-full object-cover"
                 />
@@ -113,18 +107,17 @@ export function SettingsProfilePage() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Почта</Label>
-                <Input
-                  id="email"
-                  value={user.email ?? ""}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Почта привязана к аккаунту Google и не редактируется
-                </p>
-              </div>
+              {profile?.username && (
+                <div className="space-y-2">
+                  <Label htmlFor="username">Telegram</Label>
+                  <Input
+                    id="username"
+                    value={`@${profile.username}`}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="phone">Телефон</Label>
                 <Input

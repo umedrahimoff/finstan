@@ -53,11 +53,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       try {
+        const token = await u.getIdTokenResult()
+        const claims = token.claims as Record<string, unknown>
+        const telegramId = String(claims.telegram_id ?? "").replace(/^tg_/, "")
+        const username = (claims.username as string) ?? null
+        const firstName = (claims.first_name as string) ?? null
+        const lastName = (claims.last_name as string) ?? null
+        const photoURL = (claims.photo_url as string) ?? null
+
         const r = await ensureUserDoc(
           u.uid,
-          u.email ?? null,
-          u.displayName ?? null,
-          u.photoURL ?? null
+          telegramId,
+          username,
+          firstName,
+          lastName,
+          photoURL
         )
         setUser(u)
         setRole(r)

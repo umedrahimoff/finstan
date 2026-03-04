@@ -59,7 +59,7 @@ export function SettingsUsersPage() {
   const [error, setError] = useState("")
   const [updating, setUpdating] = useState<string | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
-  const [createEmail, setCreateEmail] = useState("")
+  const [createUsername, setCreateUsername] = useState("")
   const [createRole, setCreateRole] = useState<UserRole | "none">("none")
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState("")
@@ -103,11 +103,11 @@ export function SettingsUsersPage() {
     setCreateError("")
     try {
       await createInvite(
-        createEmail,
+        createUsername,
         createRole === "none" ? null : createRole,
         user.uid
       )
-      setCreateEmail("")
+      setCreateUsername("")
       setCreateRole("none")
       setCreateOpen(false)
       loadData()
@@ -146,33 +146,15 @@ export function SettingsUsersPage() {
     }
   }
 
-  const GLOBAL_ADMIN_EMAIL = "thisisumed@gmail.com"
-  const displayedUsers =
-    users.length > 0
-      ? users
-      : user
-        ? [
-            {
-              uid: user.uid,
-              email: user.email ?? null,
-              displayName: user.displayName ?? null,
-              role: (user.email?.toLowerCase() === GLOBAL_ADMIN_EMAIL
-                ? "admin"
-                : null) as UserRole | null,
-            },
-          ]
-        : []
-  const isAdmin =
-    role === "admin" ||
-    (!!user && displayedUsers.length === 1 && displayedUsers[0].uid === user.uid)
+  const displayedUsers = users.length > 0 ? users : []
+  const isAdmin = role === "admin"
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold">Пользователи</h2>
         <p className="text-sm text-muted-foreground">
-          Добавьте пользователя по email — он сможет войти через Google. Без приглашения вход запрещён.
-          Администратор по умолчанию: thisisumed@gmail.com
+          Добавьте пользователя по Telegram username — он сможет войти через бота. Без приглашения вход запрещён.
         </p>
       </div>
       <Card>
@@ -202,7 +184,7 @@ export function SettingsUsersPage() {
               <Users className="mb-4 size-12 text-muted-foreground/50" />
               <p className="text-sm font-medium">Нет пользователей</p>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Добавьте пользователя по email — после приглашения он сможет войти через Google.
+                Добавьте пользователя по username — после приглашения он сможет войти через Telegram.
               </p>
             </div>
           ) : (
@@ -219,7 +201,7 @@ export function SettingsUsersPage() {
                         key={inv.id}
                         className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
                       >
-                        <span>{inv.email}</span>
+                        <span>@{inv.username}</span>
                         <span className="text-muted-foreground">
                           {inv.role ? ROLE_LABELS[inv.role] : "Без роли"}
                         </span>
@@ -239,7 +221,7 @@ export function SettingsUsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Email</TableHead>
+                    <TableHead>Username</TableHead>
                     <TableHead>Имя</TableHead>
                     <TableHead>Роль</TableHead>
                     <TableHead className="w-[200px]">Действия</TableHead>
@@ -248,7 +230,7 @@ export function SettingsUsersPage() {
                 <TableBody>
                   {displayedUsers.map((u) => (
                     <TableRow key={u.uid}>
-                      <TableCell>{u.email ?? "—"}</TableCell>
+                      <TableCell>{u.username ? `@${u.username}` : "—"}</TableCell>
                       <TableCell>{u.displayName ?? "—"}</TableCell>
                       <TableCell>
                         {u.role ? ROLE_LABELS[u.role] : "—"}
@@ -297,18 +279,18 @@ export function SettingsUsersPage() {
           <DialogHeader>
             <DialogTitle>Добавить пользователя</DialogTitle>
             <DialogDescription>
-              Укажите email. Пользователь сможет войти через Google только после приглашения. При первом входе ему будет назначена выбранная роль.
+              Укажите Telegram username (без @). Пользователь сможет войти только после приглашения. При первом входе ему будет назначена выбранная роль.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="invite-email">Email</Label>
+              <Label htmlFor="invite-username">Username</Label>
               <Input
-                id="invite-email"
-                type="email"
-                placeholder="user@example.com"
-                value={createEmail}
-                onChange={(e) => setCreateEmail(e.target.value)}
+                id="invite-username"
+                type="text"
+                placeholder="username"
+                value={createUsername}
+                onChange={(e) => setCreateUsername(e.target.value)}
               />
             </div>
             <div className="space-y-2">
