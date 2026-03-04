@@ -1,0 +1,274 @@
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import type { PlannedPaymentFormValues } from "./plannedPaymentFormSchema"
+import { plannedPaymentFormSchema } from "./plannedPaymentFormSchema"
+import { useAccountsStore } from "@/stores/useAccountsStore"
+import { useCategoriesStore } from "@/stores/useCategoriesStore"
+import { useCounterpartiesStore } from "@/stores/useCounterpartiesStore"
+
+const CURRENCIES = [{ value: "UZS", label: "UZS" }]
+const NONE_VALUE = "__none__"
+
+interface PlannedPaymentFormProps {
+  defaultValues?: Partial<PlannedPaymentFormValues>
+  onSubmit: (values: PlannedPaymentFormValues) => void
+  onCancel: () => void
+  onDelete?: () => void
+}
+
+export function PlannedPaymentForm({
+  defaultValues,
+  onSubmit,
+  onCancel,
+  onDelete,
+}: PlannedPaymentFormProps) {
+  const accounts = useAccountsStore((s) => s.accounts)
+  const categories = useCategoriesStore((s) => s.categories)
+  const counterparties = useCounterpartiesStore((s) => s.counterparties)
+
+  const form = useForm<PlannedPaymentFormValues>({
+    resolver: zodResolver(plannedPaymentFormSchema),
+    defaultValues: {
+      date: defaultValues?.date ?? new Date().toISOString().slice(0, 10),
+      amount: defaultValues?.amount ?? 0,
+      currency: defaultValues?.currency ?? "UZS",
+      type: defaultValues?.type ?? "expense",
+      title: defaultValues?.title ?? "",
+      accountId: defaultValues?.accountId ?? "",
+      categoryId: defaultValues?.categoryId ?? "",
+      counterpartyId: defaultValues?.counterpartyId ?? "",
+    },
+  })
+
+  const type = form.watch("type")
+  const categoryItems = categories.filter((c) => c.type === type)
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Дата</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Тип</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="income">Поступление</SelectItem>
+                  <SelectItem value="expense">Расход</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Описание</FormLabel>
+              <FormControl>
+                <Input placeholder="Оплата аренды" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Сумма</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(e.target.valueAsNumber || 0)
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Валюта</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="accountId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Счёт</FormLabel>
+              <Select
+                onValueChange={(v) => field.onChange(v === NONE_VALUE ? "" : v)}
+                value={field.value || NONE_VALUE}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите счёт" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>Не выбрано</SelectItem>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="categoryId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Категория</FormLabel>
+              <Select
+                onValueChange={(v) => field.onChange(v === NONE_VALUE ? "" : v)}
+                value={field.value || NONE_VALUE}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите категорию" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>Не выбрано</SelectItem>
+                  {categoryItems.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="counterpartyId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Контрагент</FormLabel>
+              <Select
+                onValueChange={(v) => field.onChange(v === NONE_VALUE ? "" : v)}
+                value={field.value || NONE_VALUE}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите контрагента" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>Не выбрано</SelectItem>
+                  {counterparties.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-between pt-4">
+          <div>
+            {onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-destructive hover:bg-destructive/10"
+                onClick={onDelete}
+              >
+                Удалить
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Отмена
+            </Button>
+            <Button type="submit">Сохранить</Button>
+          </div>
+        </div>
+      </form>
+    </Form>
+  )
+}
