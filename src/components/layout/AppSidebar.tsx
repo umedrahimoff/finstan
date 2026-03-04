@@ -29,7 +29,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +80,7 @@ const navItems = [
 
 export function AppSidebar() {
   const location = useLocation()
+  const { state: sidebarState } = useSidebar()
   const companies = useCompanyStore((s) => s.companies)
   const currentCompanyId = useCompanyStore((s) => s.currentCompanyId)
   const setCurrentCompany = useCompanyStore((s) => s.setCurrentCompany)
@@ -130,13 +137,13 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
             F
           </div>
-          <span className="font-semibold">Finstan</span>
+          <span className="font-semibold group-data-[collapsible=icon]:hidden">Finstan</span>
         </div>
       </SidebarHeader>
 
@@ -233,15 +240,22 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton className="w-full justify-between">
-                      <span className="flex items-center gap-2 truncate">
-                        <Building2 className="size-4 shrink-0" />
-                        {currentCompany?.name ?? "Компания"}
-                      </span>
-                      <ChevronDown className="size-4 shrink-0 opacity-50" />
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton className="w-full justify-between">
+                          <span className="flex items-center gap-2 truncate">
+                            <Building2 className="size-4 shrink-0" />
+                            {currentCompany?.name ?? "Компания"}
+                          </span>
+                          <ChevronDown className="size-4 shrink-0 opacity-50 group-data-[collapsible=icon]:hidden" />
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" hidden={sidebarState !== "collapsed"}>
+                      {currentCompany?.name ?? "Компания"}
+                    </TooltipContent>
+                  </Tooltip>
                   <DropdownMenuContent align="start" className="min-w-[200px]">
                     {activeCompanies.map((c) => (
                       <DropdownMenuItem
@@ -310,6 +324,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={location.pathname === item.to}
+                    tooltip={item.label}
                   >
                     <Link to={item.to}>
                       <item.icon className="size-4" />
@@ -326,7 +341,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location.pathname.startsWith("/settings")}>
+                <SidebarMenuButton asChild isActive={location.pathname.startsWith("/settings")} tooltip="Настройки">
                   <Link to="/settings">
                     <Settings className="size-4" />
                     <span>Настройки</span>

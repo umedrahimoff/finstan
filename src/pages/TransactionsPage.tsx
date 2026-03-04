@@ -258,7 +258,8 @@ export function TransactionsPage() {
         cell: ({ row }) => {
           const type = row.original.type
           if (type === "transfer") return "—"
-          return getCounterpartyName(row.original.counterpartyId ?? "", counterparties)
+          const name = getCounterpartyName(row.original.counterpartyId ?? "", counterparties)
+          return <span className="block max-w-[120px] truncate" title={name}>{name}</span>
         },
       },
       {
@@ -531,7 +532,10 @@ export function TransactionsPage() {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    className={header.column.id === "counterparty" ? "w-[120px] max-w-[120px]" : undefined}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -557,7 +561,10 @@ export function TransactionsPage() {
               sortedRows.map((row) => (
                 <TableRow key={row.original.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      className={cell.column.id === "counterparty" ? "max-w-[120px]" : undefined}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

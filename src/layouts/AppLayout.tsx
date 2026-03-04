@@ -154,7 +154,7 @@ export function AppLayout() {
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-4">
+        <div className="min-w-0 flex-1 overflow-auto p-4">
           <Outlet />
         </div>
       </SidebarInset>

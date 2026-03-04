@@ -49,6 +49,8 @@ const ROLE_OPTIONS: { value: UserRole | "none"; label: string; desc: string }[] 
   { value: "moderator", label: "Модератор", desc: "Может управлять пользователями (кроме администратора)" },
 ]
 
+const usersCacheByUid: Record<string, { users: AppUser[]; invites: UserInvite[] }> = {}
+
 export function SettingsUsersPage() {
   const { user, role } = useAuth()
   const [users, setUsers] = useState<AppUser[]>([])
@@ -63,18 +65,37 @@ export function SettingsUsersPage() {
   const [createError, setCreateError] = useState("")
 
   const loadData = () => {
-    Promise.all([getAllUsers(), getAllInvites()])
-      .then(([list, invs]) => {
-        setUsers(list)
-        setInvites(invs)
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
+    setError("")
+    const cached = user?.uid ? usersCacheByUid[user.uid] : null
+    if (cached) {
+      setUsers(cached.users)
+      setInvites(cached.invites)
+      setLoading(false)
+    }
+    const timeout = setTimeout(() => {
+      setError((e) => (e ? e : "Таймаут загрузки. Проверьте подключение к интернету."))
+      setLoading(false)
+    }, 15000)
+    Promise.allSettled([getAllUsers(), getAllInvites()]).then(([usersResult, invitesResult]) => {
+      clearTimeout(timeout)
+      const usersList = usersResult.status === "fulfilled" ? usersResult.value : []
+      const invitesList = invitesResult.status === "fulfilled" ? invitesResult.value : []
+      if (usersResult.status === "fulfilled" && user?.uid) {
+        usersCacheByUid[user.uid] = { users: usersList, invites: invitesList }
+        setUsers(usersList)
+      } else if (usersResult.status === "rejected") {
+        setError(usersResult.reason?.message ?? "Не удалось загрузить пользователей")
+      }
+      if (invitesResult.status === "fulfilled") {
+        setInvites(invitesList)
+      }
+      setLoading(false)
+    })
   }
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [user?.uid])
 
   const handleCreateInvite = async () => {
     if (!user) return
@@ -125,9 +146,25 @@ export function SettingsUsersPage() {
     }
   }
 
+  const GLOBAL_ADMIN_EMAIL = "thisisumed@gmail.com"
+  const displayedUsers =
+    users.length > 0
+      ? users
+      : user
+        ? [
+            {
+              uid: user.uid,
+              email: user.email ?? null,
+              displayName: user.displayName ?? null,
+              role: (user.email?.toLowerCase() === GLOBAL_ADMIN_EMAIL
+                ? "admin"
+                : null) as UserRole | null,
+            },
+          ]
+        : []
   const isAdmin =
     role === "admin" ||
-    (!!user && users.length === 1 && users[0].uid === user.uid)
+    (!!user && displayedUsers.length === 1 && displayedUsers[0].uid === user.uid)
 
   return (
     <div className="space-y-6">
@@ -160,7 +197,7 @@ export function SettingsUsersPage() {
             <p className="text-sm text-muted-foreground">
               Только администратор может управлять пользователями.
             </p>
-          ) : users.length === 0 ? (
+          ) : displayedUsers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Users className="mb-4 size-12 text-muted-foreground/50" />
               <p className="text-sm font-medium">Нет пользователей</p>
@@ -209,7 +246,7 @@ export function SettingsUsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((u) => (
+                  {displayedUsers.map((u) => (
                     <TableRow key={u.uid}>
                       <TableCell>{u.email ?? "—"}</TableCell>
                       <TableCell>{u.displayName ?? "—"}</TableCell>

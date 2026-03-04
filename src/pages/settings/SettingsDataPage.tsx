@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/table"
 import { useCompanyStore } from "@/stores/useCompanyStore"
 import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
+import { useAccountsStore } from "@/stores/useAccountsStore"
 import { parseBankCsv, type BankRow } from "@/lib/importBank"
 import { parseExportRU, type ExportRURow } from "@/lib/importExportRU"
 import { formatAmount } from "@/lib/currency"
@@ -57,7 +58,7 @@ export function SettingsDataPage() {
     [allCompanies]
   )
   const companyId = useCompanyStore((s) => s.currentCompanyId) ?? "default"
-  const accounts = useCompanyDataStore((s) => s.getAccounts(companyId))
+  const accounts = useAccountsStore((s) => s.accounts)
   const counterparties = useCompanyDataStore((s) => s.getCounterparties(companyId))
   const resetCompanyDataBatch = useCompanyDataStore((s) => s.resetCompanyDataBatch)
   const addTransactionsBatch = useCompanyDataStore((s) => s.addTransactionsBatch)

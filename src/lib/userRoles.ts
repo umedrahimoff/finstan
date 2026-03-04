@@ -151,11 +151,14 @@ export async function getAllUsers(): Promise<AppUser[]> {
   const snap = await getDocs(collection(db, USERS_COLLECTION))
   return snap.docs.map((d) => {
     const data = d.data()
+    const email = data.email ?? null
+    const storedRole = (data.role as UserRole) ?? null
+    const role = isGlobalAdmin(email) ? "admin" : storedRole
     return {
       uid: d.id,
-      email: data.email ?? null,
+      email,
       displayName: data.displayName ?? null,
-      role: (data.role as UserRole) ?? null,
+      role,
     }
   })
 }
