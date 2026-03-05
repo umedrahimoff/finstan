@@ -1,10 +1,13 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import bcrypt from "bcryptjs"
-import { sql } from "../../lib/db"
 import { createToken } from "../../lib/jwt"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    const url = process.env.DATABASE_URL
+    if (!url) throw new Error("DATABASE_URL not set")
+    const { neon } = await import("@neondatabase/serverless")
+    const sql = neon(url)
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Method not allowed" })
     }

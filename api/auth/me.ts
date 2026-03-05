@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { verifyToken } from "../../lib/jwt"
-import { sql } from "../../lib/db"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
@@ -18,6 +17,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: "Invalid token" })
   }
 
+  const url = process.env.DATABASE_URL
+  if (!url) return res.status(500).json({ error: "DATABASE_URL not set" })
+  const { neon } = await import("@neondatabase/serverless")
+  const sql = neon(url)
   const rows = await sql`SELECT * FROM app_users WHERE id = ${payload.uid} LIMIT 1`
   const u = rows[0] as Record<string, unknown> | undefined
   if (!u) {
