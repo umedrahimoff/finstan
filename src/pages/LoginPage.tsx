@@ -32,7 +32,14 @@ export function LoginPage() {
       try {
         json = text ? JSON.parse(text) : {}
       } catch {
-        throw new Error(res.ok ? "Ошибка ответа сервера" : "Не удалось подключиться. Попробуйте позже.")
+        const msg = res.ok
+          ? "Ошибка ответа сервера"
+          : res.status === 404
+            ? "Страница не найдена. Проверьте настройки деплоя."
+            : res.status >= 500
+              ? "Ошибка сервера. Проверьте DATABASE_URL и JWT_SECRET в Vercel."
+              : "Не удалось подключиться. Попробуйте позже."
+        throw new Error(msg)
       }
       if (!res.ok) {
         throw new Error(json.error || "Ошибка")
