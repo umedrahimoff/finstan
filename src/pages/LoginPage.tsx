@@ -23,7 +23,13 @@ export function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       })
-      const json = await res.json()
+      const text = await res.text()
+      let json: { error?: string; token?: string } = {}
+      try {
+        json = text ? JSON.parse(text) : {}
+      } catch {
+        throw new Error(res.ok ? "Ошибка ответа сервера" : "Ошибка сервера. Проверьте DATABASE_URL и JWT_SECRET в Vercel.")
+      }
       if (!res.ok) throw new Error(json.error || "Ошибка")
       if (!json.token) throw new Error("Нет токена")
       setToken(json.token)
