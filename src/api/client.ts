@@ -28,7 +28,16 @@ export async function apiFetch<T>(
     ...rest,
     headers,
   })
-  const data = await res.json().catch(() => ({}))
+  const text = await res.text()
+  let data: unknown = {}
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`)
+    }
+    throw new Error("Сервер вернул неверный ответ")
+  }
   if (!res.ok) {
     throw new Error((data as { error?: string }).error || `API error: ${res.status}`)
   }

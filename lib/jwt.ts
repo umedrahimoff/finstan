@@ -7,11 +7,11 @@ const EXP = "7d"
 
 export interface JwtPayload {
   uid: string
-  telegramId: string
-  username: string | null
-  firstName: string | null
-  lastName: string | null
-  photoUrl: string | null
+  telegramId?: string
+  username?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  photoUrl?: string | null
 }
 
 export async function createToken(payload: JwtPayload): Promise<string> {

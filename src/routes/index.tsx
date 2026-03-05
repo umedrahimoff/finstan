@@ -2,7 +2,6 @@ import { createBrowserRouter, Navigate } from "react-router-dom"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AppLayout } from "@/layouts/AppLayout"
 import { LoginPage } from "@/pages/LoginPage"
-import { AuthCallbackPage } from "@/pages/AuthCallbackPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { TransactionsPage } from "@/pages/TransactionsPage"
 import { AccountsPage } from "@/pages/AccountsPage"
@@ -14,15 +13,12 @@ import { ReportsPage } from "@/pages/ReportsPage"
 import { AnalyticsPage } from "@/pages/AnalyticsPage"
 import { ProjectsPage } from "@/pages/ProjectsPage"
 import { SettingsPage } from "@/pages/SettingsPage"
-import { SettingsProfilePage } from "@/pages/settings/SettingsProfilePage"
 import { SettingsGeneralPage } from "@/pages/settings/SettingsGeneralPage"
 import { SettingsDataPage } from "@/pages/settings/SettingsDataPage"
-import { SettingsUsersPage } from "@/pages/settings/SettingsUsersPage"
 import { SettingsAboutPage } from "@/pages/settings/SettingsAboutPage"
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
-  { path: "/auth", element: <AuthCallbackPage /> },
   {
     path: "/",
     element: (
@@ -45,11 +41,9 @@ export const router = createBrowserRouter([
         path: "settings",
         element: <SettingsPage />,
         children: [
-          { index: true, element: <Navigate to="/settings/profile" replace /> },
-          { path: "profile", element: <SettingsProfilePage /> },
+          { index: true, element: <Navigate to="/settings/general" replace /> },
           { path: "general", element: <SettingsGeneralPage /> },
           { path: "data", element: <SettingsDataPage /> },
-          { path: "users", element: <SettingsUsersPage /> },
           { path: "about", element: <SettingsAboutPage /> },
         ],
       },

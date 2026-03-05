@@ -1,12 +1,10 @@
 import { Link, Outlet, useLocation } from "react-router-dom"
-import { Palette, Database, Users, Info, UserCircle } from "lucide-react"
+import { Palette, Database, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const subSections = [
-  { to: "/settings/profile", icon: UserCircle, label: "Профиль" },
   { to: "/settings/general", icon: Palette, label: "Общие" },
   { to: "/settings/data", icon: Database, label: "Данные" },
-  { to: "/settings/users", icon: Users, label: "Пользователи" },
   { to: "/settings/about", icon: Info, label: "О приложении" },
 ]
 

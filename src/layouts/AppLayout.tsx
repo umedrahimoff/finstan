@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, Outlet, useNavigate } from "react-router-dom"
-import { ArrowDownLeft, ArrowUpRight, LogOut, User } from "lucide-react"
+import { ArrowDownLeft, ArrowUpRight, LogOut, Settings } from "lucide-react"
 import { clearToken } from "@/api/client"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
@@ -26,18 +26,18 @@ import { calculateAccountBalance } from "@/lib/accountBalance"
 import { formatAmount, formatCompact } from "@/lib/currency"
 
 export function AppLayout() {
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [quickAddType, setQuickAddType] = useState<"income" | "expense" | null>(null)
-  const addTransaction = useTransactionsStore((s) => s.addTransaction)
-  const accounts = useAccountsStore((s) => s.accounts)
-  const transactions = useTransactionsStore((s) => s.transactions)
 
   const handleLogout = () => {
     clearToken()
     navigate("/login", { replace: true })
     window.location.reload()
   }
+  const addTransaction = useTransactionsStore((s) => s.addTransaction)
+  const accounts = useAccountsStore((s) => s.accounts)
+  const transactions = useTransactionsStore((s) => s.transactions)
 
   const handleQuickAddSubmit = (values: TransactionFormValues) => {
     addTransaction(values)
@@ -121,37 +121,23 @@ export function AppLayout() {
                 Расход
               </Button>
             </div>
-            <div className="ml-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    {(profile?.photoURL ?? user?.photoURL) ? (
-                      <img
-                        src={profile?.photoURL ?? user?.photoURL ?? ""}
-                        alt=""
-                        className="size-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex size-8 items-center justify-center rounded-full bg-muted">
-                        <User className="size-4 text-muted-foreground" />
-                      </div>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings/profile">Профиль</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings">Настройки</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 size-4" />
-                    Выйти
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="ml-auto">
+                  {user?.username ?? "Пользователь"}
+                  <Settings className="ml-2 size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/settings">Настройки</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 size-4" />
+                  Выйти
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         <div className="min-w-0 flex-1 overflow-auto p-4">

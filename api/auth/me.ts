@@ -18,21 +18,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: "Invalid token" })
   }
 
-  const rows = await sql`SELECT * FROM users WHERE id = ${payload.uid} LIMIT 1`
-  const user = rows[0] as Record<string, unknown> | undefined
-  if (!user) {
-    return res.status(401).json({ error: "User not found" })
+  const appUser = await sql`SELECT * FROM app_users WHERE id = ${payload.uid} LIMIT 1`
+  const u = appUser[0] as Record<string, unknown> | undefined
+  if (u) {
+    return res.status(200).json({
+      uid: u.id,
+      username: u.username,
+      displayName: u.username,
+      role: null,
+    })
   }
 
-  return res.status(200).json({
-    uid: user.id,
-    telegramId: user.telegram_id,
-    username: user.username,
-    firstName: user.first_name,
-    lastName: user.last_name,
-    displayName: user.display_name,
-    photoURL: user.photo_url,
-    phone: user.phone,
-    role: user.role,
-  })
+  const legacyUser = await sql`SELECT * FROM users WHERE id = ${payload.uid} LIMIT 1`
+  const lu = legacyUser[0] as Record<string, unknown> | undefined
+  if (lu) {
+    return res.status(200).json({
+      uid: lu.id,
+      username: lu.username,
+      displayName: lu.display_name,
+      role: lu.role,
+    })
+  }
+
+  return res.status(401).json({ error: "User not found" })
 }
