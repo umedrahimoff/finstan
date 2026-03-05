@@ -1,7 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom"
-import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AppLayout } from "@/layouts/AppLayout"
-import { LoginPage } from "@/pages/LoginPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { TransactionsPage } from "@/pages/TransactionsPage"
 import { AccountsPage } from "@/pages/AccountsPage"
@@ -18,14 +16,9 @@ import { SettingsDataPage } from "@/pages/settings/SettingsDataPage"
 import { SettingsAboutPage } from "@/pages/settings/SettingsAboutPage"
 
 export const router = createBrowserRouter([
-  { path: "/login", element: <LoginPage /> },
   {
     path: "/",
-    element: (
-      <ProtectedRoute>
-        <AppLayout />
-      </ProtectedRoute>
-    ),
+    element: <AppLayout />,
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "transactions", element: <TransactionsPage /> },
@@ -49,5 +42,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  { path: "/login", element: <Navigate to="/" replace /> },
   { path: "*", element: <Navigate to="/" replace /> },
 ])

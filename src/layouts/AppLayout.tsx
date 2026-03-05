@@ -1,7 +1,6 @@
 import { useState } from "react"
-import { Link, Outlet, useNavigate } from "react-router-dom"
-import { ArrowDownLeft, ArrowUpRight, LogOut, Settings } from "lucide-react"
-import { clearToken } from "@/api/client"
+import { Link, Outlet } from "react-router-dom"
+import { ArrowDownLeft, ArrowUpRight, Settings } from "lucide-react"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { Button } from "@/components/ui/button"
@@ -27,14 +26,7 @@ import { formatAmount, formatCompact } from "@/lib/currency"
 
 export function AppLayout() {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [quickAddType, setQuickAddType] = useState<"income" | "expense" | null>(null)
-
-  const handleLogout = () => {
-    clearToken()
-    navigate("/login", { replace: true })
-    window.location.reload()
-  }
   const addTransaction = useTransactionsStore((s) => s.addTransaction)
   const accounts = useAccountsStore((s) => s.accounts)
   const transactions = useTransactionsStore((s) => s.transactions)
@@ -131,10 +123,6 @@ export function AppLayout() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
                   <Link to="/settings">Настройки</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 size-4" />
-                  Выйти
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
