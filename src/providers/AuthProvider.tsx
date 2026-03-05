@@ -1,35 +1,52 @@
-import { createContext, useContext, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
+import { getToken, clearToken, apiFetch } from "@/api/client"
 
 interface AuthUser {
   uid: string
-  username: string | null
-  displayName: string | null
-  role: string | null
+  username: string
 }
 
 interface AuthContextValue {
-  user: AuthUser
-  loading: false
+  user: AuthUser | null
+  loading: boolean
   refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-const GUEST_USER: AuthUser = {
-  uid: "guest",
-  username: "Пользователь",
-  displayName: "Пользователь",
-  role: null,
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const value: AuthContextValue = {
-    user: GUEST_USER,
-    loading: false,
-    refreshProfile: async () => {},
-  }
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const refreshProfile = useCallback(async () => {
+    const token = getToken()
+    if (!token) return
+    try {
+      const p = await apiFetch<AuthUser>("/auth/me")
+      setUser(p)
+    } catch {
+      clearToken()
+      setUser(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    const token = getToken()
+    if (!token) {
+      setLoading(false)
+      return
+    }
+    apiFetch<AuthUser>("/auth/me")
+      .then(setUser)
+      .catch(() => {
+        clearToken()
+        setUser(null)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, loading, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )

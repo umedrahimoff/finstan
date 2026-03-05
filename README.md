@@ -18,6 +18,10 @@ npm install
 npm run dev
 ```
 
-## Деплой (Vercel)
+## Авторизация
 
-Переменная `DATABASE_URL` для `/api/health`.
+Только вход (логин + пароль), без регистрации.
+
+1. Выполни `scripts/init-neon.sql` в Neon SQL Editor
+2. Создай пользователя: `npm run seed` или `npm run seed -- admin mypassword`
+3. В Vercel: `DATABASE_URL`, `JWT_SECRET`
