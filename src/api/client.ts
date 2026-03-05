@@ -36,7 +36,7 @@ export async function apiFetch<T>(
     if (!res.ok) {
       throw new Error(`API error: ${res.status}`)
     }
-    throw new Error("Сервер вернул неверный ответ")
+    throw new Error("Не удалось подключиться. Попробуйте позже.")
   }
   if (!res.ok) {
     throw new Error((data as { error?: string }).error || `API error: ${res.status}`)

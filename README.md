@@ -16,17 +16,10 @@
 
 ```bash
 npm install
-cp .env.example .env
-# Заполните переменные Firebase в .env
 npm run dev
 ```
 
-## Firebase Auth
-
-1. Создайте проект в [Firebase Console](https://console.firebase.google.com)
-2. Включите Authentication → Sign-in method: Email/Password и Google
-3. Скопируйте конфиг в `.env` из `.env.example`
-4. Для Google Sign-In добавьте домен в Authorized domains (localhost для разработки)
+Локально API проксируется на production (finstan.vercel.app). Для деплоя нужны переменные в Vercel: `DATABASE_URL`, `JWT_SECRET`.
 
 ## Структура проекта
 
