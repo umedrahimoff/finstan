@@ -39,7 +39,6 @@ function getOrInitCompany(state: { byCompany: ByCompany }, companyId: string): C
 
 interface CompanyDataState {
   byCompany: ByCompany
-  // Getters (used via selectors with companyId)
   getAccounts: (companyId: string) => Account[]
   getCategories: (companyId: string) => Category[]
   getCounterparties: (companyId: string) => Counterparty[]
@@ -47,7 +46,6 @@ interface CompanyDataState {
   getBudgets: (companyId: string) => Budget[]
   getPlannedPayments: (companyId: string) => PlannedPayment[]
   getProjects: (companyId: string) => Project[]
-  // Actions
   addAccount: (acc: Omit<Account, "id" | "balance">) => Account
   updateAccount: (id: string, acc: Partial<Omit<Account, "id">>) => void
   setPrimaryAccount: (id: string) => void
