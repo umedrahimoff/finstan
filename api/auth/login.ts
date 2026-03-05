@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const bcrypt = (await import("bcryptjs")).default
     const { neon } = await import("@neondatabase/serverless")
-    const { createToken } = await import("../../lib/jwt")
+    const { createToken } = await import("../../lib/jwt.js")
     const sql = neon(url)
     const rows = await sql`SELECT id, username, password_hash FROM app_users WHERE username = ${u} LIMIT 1`
     const user = rows[0] as { id: string; username: string; password_hash: string } | undefined
