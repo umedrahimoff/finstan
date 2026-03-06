@@ -8,6 +8,7 @@
     "dev": "vite",
     "seed": "node --env-file=.env scripts/seed-user.mjs",
     "init-tables": "node --env-file=.env scripts/init-tables.mjs",
+    "migrate": "node --env-file=.env scripts/migrate-frozen.mjs",
     "db:init": "npm run seed && npm run init-tables",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

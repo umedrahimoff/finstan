@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react"
-import { Users, UserPlus, MoreHorizontal, Pencil, Trash2, Ban, CheckCircle } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { UserPlus, MoreHorizontal, Pencil, Trash2, Ban, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -213,20 +212,11 @@ export function SettingsUsersPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="size-4" />
-            Список пользователей
-          </CardTitle>
-          <CardDescription>Все пользователи системы</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Загрузка...</p>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Загрузка...</p>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Логин</TableHead>
@@ -260,8 +250,8 @@ export function SettingsUsersPage() {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          {canManage && (u.role !== "admin" || user?.role === "admin") && u.id !== user?.uid && (
+                        <TableCell className="w-[50px]">
+                          {canManage && (u.role !== "admin" || user?.role === "admin") && u.id !== user?.uid ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="size-8">
@@ -300,17 +290,21 @@ export function SettingsUsersPage() {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
+                            ) : u.id === user?.uid ? (
+                              <div className="flex size-8 items-center justify-center">
+                                <span className="text-xs text-muted-foreground">Вы</span>
+                              </div>
+                            ) : (
+                              <div className="size-8" />
                             )}
                         </TableCell>
                       </TableRow>
                     ))
                   )}
                 </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </Table>
+        </div>
+      )}
 
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetForm() }}>
