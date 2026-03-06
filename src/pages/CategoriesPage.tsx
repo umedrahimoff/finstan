@@ -30,6 +30,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { formatAmount } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 import { CategoryFormDialog } from "@/features/categories/CategoryFormDialog"
 import type { CategoryFormValues } from "@/features/categories/categoryFormSchema"
 import { TablePagination } from "@/components/TablePagination"
@@ -247,7 +248,7 @@ export function CategoriesPage() {
                         total >= 0 ? "text-green-600" : "text-red-600"
                       }`}
                     >
-                      {formatAmount(Math.abs(total), "UZS")}
+                      {formatAmount(Math.abs(total), getSystemCurrency())}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

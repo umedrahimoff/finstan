@@ -53,9 +53,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userId = crypto.randomUUID()
   const companyId = crypto.randomUUID()
 
+  await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ`
   await sql`
-    INSERT INTO app_users (id, username, password_hash, role, tenant_id, telegram_chat_id)
-    VALUES (${userId}, ${u}, ${hash}, 'admin', ${tenantId}, ${reg.chat_id})
+    INSERT INTO app_users (id, username, password_hash, role, tenant_id, telegram_chat_id, last_login_at)
+    VALUES (${userId}, ${u}, ${hash}, 'admin', ${tenantId}, ${reg.chat_id}, now())
   `
   await sql`
     INSERT INTO companies (id, name, owner_user_id)

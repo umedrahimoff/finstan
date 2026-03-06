@@ -30,6 +30,7 @@ import { useAccountsStore } from "@/stores/useAccountsStore"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { calculateAccountBalance } from "@/lib/accountBalance"
 import { formatAmount } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 import { ACCOUNT_TYPES } from "@/features/accounts/accountFormSchema"
 import { AccountFormDialog } from "@/features/accounts/AccountFormDialog"
 import type { AccountFormValues } from "@/features/accounts/accountFormSchema"
@@ -276,7 +277,7 @@ export function AccountsPage() {
               totalBalance >= 0 ? "text-green-600" : "text-red-600"
             }`}
           >
-            {formatAmount(totalBalance, "UZS")}
+            {formatAmount(totalBalance, getSystemCurrency())}
           </span>
         </div>
       )}

@@ -24,6 +24,7 @@ import {
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
 import { formatAmount } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 import {
   filterTransactionsByPeriod,
   aggregateByCategory,
@@ -224,7 +225,7 @@ export function AnalyticsPage() {
                       </Pie>
                       <Tooltip
                         formatter={(v) =>
-                          formatAmount(Number(v ?? 0), "UZS")
+                          formatAmount(Number(v ?? 0), getSystemCurrency())
                         }
                       />
                     </PieChart>
@@ -263,7 +264,7 @@ export function AnalyticsPage() {
                       </Pie>
                       <Tooltip
                         formatter={(v) =>
-                          formatAmount(Number(v ?? 0), "UZS")
+                          formatAmount(Number(v ?? 0), getSystemCurrency())
                         }
                       />
                     </PieChart>
@@ -303,7 +304,7 @@ export function AnalyticsPage() {
                   />
                   <Tooltip
                     formatter={(v) =>
-                      formatAmount(Number(v ?? 0), "UZS")
+                      formatAmount(Number(v ?? 0), getSystemCurrency())
                     }
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",

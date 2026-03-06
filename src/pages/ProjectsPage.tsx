@@ -29,6 +29,7 @@ import {
 import { useProjectsStore } from "@/stores/useProjectsStore"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { formatAmount } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 import { ProjectFormDialog } from "@/features/projects/ProjectFormDialog"
 import type { ProjectFormValues } from "@/features/projects/projectFormSchema"
 import type { Project } from "@/types"
@@ -202,7 +203,7 @@ export function ProjectsPage() {
                         total >= 0 ? "text-green-600" : "text-red-600"
                       }`}
                     >
-                      {formatAmount(Math.abs(total), "UZS")}
+                      {formatAmount(Math.abs(total), getSystemCurrency())}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

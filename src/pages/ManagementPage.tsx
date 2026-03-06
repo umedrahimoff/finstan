@@ -42,6 +42,10 @@ interface TenantUser {
   tenant_id: string
   frozen?: boolean
   created_at?: string
+  last_login_at?: string | null
+  transactions?: number
+  accounts?: number
+  last_activity?: string | null
 }
 
 export function ManagementPage() {
@@ -203,6 +207,8 @@ export function ManagementPage() {
                   <TableHead>Логин</TableHead>
                   <TableHead>Роль</TableHead>
                   <TableHead>Статус</TableHead>
+                  <TableHead>Последний вход</TableHead>
+                  <TableHead>Статистика</TableHead>
                   <TableHead>Создан</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
@@ -217,6 +223,24 @@ export function ManagementPage() {
                         <span className="text-destructive">Заморожена</span>
                       ) : (
                         <span className="text-muted-foreground">Активна</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {u.last_login_at
+                        ? new Date(u.last_login_at).toLocaleDateString("ru-RU", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {u.transactions ?? 0} опер. · {u.accounts ?? 0} счетов
+                      {u.last_activity && (
+                        <span className="block text-xs">
+                          Последняя: {new Date(u.last_activity).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">

@@ -7,7 +7,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatUzs } from "@/lib/currency"
+import { formatAmount } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { useAccountsStore } from "@/stores/useAccountsStore"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
@@ -143,7 +144,7 @@ export function DashboardPage() {
                   metrics.cashflow >= 0 ? "text-green-600" : "text-red-600"
                 }`}
               >
-                {formatUzs(metrics.cashflow)}
+                {formatAmount(metrics.cashflow, getSystemCurrency())}
               </div>
               <p className="text-xs text-muted-foreground">{periodLabel}</p>
             </CardContent>
@@ -158,7 +159,7 @@ export function DashboardPage() {
                   metrics.pl >= 0 ? "text-green-600" : "text-red-600"
                 }`}
               >
-                {formatUzs(metrics.pl)}
+                {formatAmount(metrics.pl, getSystemCurrency())}
               </div>
               <p className="text-xs text-muted-foreground">{periodLabel}</p>
             </CardContent>
@@ -169,7 +170,7 @@ export function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-xl font-bold text-green-600">
-                {formatUzs(metrics.mrr)}
+                {formatAmount(metrics.mrr, getSystemCurrency())}
               </div>
               <p className="text-xs text-muted-foreground">
                 {recurringCategoryIds.length > 0
@@ -184,7 +185,7 @@ export function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-xl font-bold text-green-600">
-                {formatUzs(metrics.arr)}
+                {formatAmount(metrics.arr, getSystemCurrency())}
               </div>
               <p className="text-xs text-muted-foreground">MRR × 12</p>
             </CardContent>
@@ -195,7 +196,7 @@ export function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-xl font-bold text-red-600">
-                {formatUzs(metrics.burnRate)}
+                {formatAmount(metrics.burnRate, getSystemCurrency())}
               </div>
               <p className="text-xs text-muted-foreground">
                 Расходы за месяц
@@ -229,7 +230,7 @@ export function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatUzs(metrics.totalBalance)}
+                {formatAmount(metrics.totalBalance, getSystemCurrency())}
               </div>
               <p className="text-xs text-muted-foreground">По всем счетам</p>
             </CardContent>

@@ -28,14 +28,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === "GET") {
     try {
+      await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ`
       const rows = await sql`
-        SELECT u.id, u.username, u.role, u.tenant_id, u.frozen, t.created_at
+        SELECT u.id, u.username, u.role, u.tenant_id, u.frozen, u.last_login_at, t.created_at
         FROM app_users u
         JOIN tenants t ON u.tenant_id = t.id
         WHERE u.tenant_id IS NOT NULL
         ORDER BY t.created_at DESC
       `.catch(() => [])
-      return res.status(200).json(rows)
+      const tenantIds = [...new Set((rows as { tenant_id: string }[]).map((r) => r.tenant_id))]
+      const stats: Record<string, { transactions: number; accounts: number; last_activity: string | null }> = {}
+      for (const tid of tenantIds) {
+        const txCount = await sql`
+          SELECT COUNT(*)::int as n FROM transactions WHERE user_id IN (SELECT id FROM app_users WHERE tenant_id = ${tid})
+        `.then((r) => (r[0] as { n: number }).n).catch(() => 0)
+        const accCount = await sql`
+          SELECT COUNT(*)::int as n FROM accounts WHERE user_id IN (SELECT id FROM app_users WHERE tenant_id = ${tid})
+        `.then((r) => (r[0] as { n: number }).n).catch(() => 0)
+        const lastTx = await sql`
+          SELECT MAX(date) as d FROM transactions WHERE user_id IN (SELECT id FROM app_users WHERE tenant_id = ${tid})
+        `.then((r) => (r[0] as { d: string | null })?.d ?? null).catch(() => null)
+        stats[tid] = { transactions: txCount, accounts: accCount, last_activity: lastTx }
+      }
+      const result = (rows as Record<string, unknown>[]).map((r) => ({
+        ...r,
+        ...(stats[(r.tenant_id as string)] ?? { transactions: 0, accounts: 0, last_activity: null }),
+      }))
+      return res.status(200).json(result)
     } catch (err) {
       console.error("Management list:", err)
       return res.status(500).json({ error: String((err as Error).message) })

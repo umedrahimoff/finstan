@@ -4,10 +4,6 @@ function formatWithSpaces(n: number): string {
   return s.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0")
 }
 
-export function formatUzs(amount: number): string {
-  return formatWithSpaces(amount) + " UZS"
-}
-
 export function formatAmount(amount: number, currency: string = "UZS"): string {
   return formatWithSpaces(amount) + " " + currency
 }

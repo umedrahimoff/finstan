@@ -9,7 +9,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Pencil, Copy, Trash2, Plus, CheckSquare, Square } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Pencil, Copy, Trash2, Plus, CheckSquare, Square, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -49,6 +49,7 @@ import { useCounterpartiesStore } from "@/stores/useCounterpartiesStore"
 import { useAccountsStore } from "@/stores/useAccountsStore"
 import { useProjectsStore } from "@/stores/useProjectsStore"
 import { formatAmount } from "@/lib/currency"
+import { toExcel, toCSV } from "@/lib/exportData"
 import type { Transaction, TransactionType } from "@/types"
 import { TransactionFormDialog } from "@/features/transactions/TransactionFormDialog"
 import type { TransactionFormValues } from "@/features/transactions/transactionFormSchema"
@@ -414,6 +415,24 @@ export function TransactionsPage() {
     setDeletingBatch(false)
   }
 
+  const dateStr = new Date().toISOString().slice(0, 10)
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+  const handleExportExcel = () => {
+    const blob = toExcel(filteredTransactions, accounts, categories, counterparties, projects)
+    downloadBlob(blob, `операции-${dateStr}.xlsx`)
+  }
+  const handleExportCSV = () => {
+    const csv = toCSV(filteredTransactions, accounts, categories, counterparties, projects)
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `операции-${dateStr}.csv`)
+  }
+
   const formDefaultValues = editingTx
     ? {
         date: editingTx.date,
@@ -516,6 +535,21 @@ export function TransactionsPage() {
             ))}
           </SelectContent>
         </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" title="Экспорт операций">
+              <Download className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportExcel} disabled={filteredTransactions.length === 0}>
+              Excel (.xlsx)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportCSV} disabled={filteredTransactions.length === 0}>
+              CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {selectedCount > 0 && (

@@ -15,6 +15,7 @@
     "migrate:user-companies": "node --env-file=.env scripts/migrate-user-companies.mjs",
     "migrate:tenants": "node --env-file=.env scripts/migrate-tenants.mjs",
     "migrate:telegram": "node --env-file=.env scripts/migrate-telegram.mjs",
+    "migrate:last-login": "node --env-file=.env scripts/migrate-last-login.mjs",
     "telegram:webhook": "node --env-file=.env scripts/set-telegram-webhook.mjs",
     "make-global-admin": "node --env-file=.env scripts/make-global-admin.mjs",
     "migrate:user-to-moderator": "node --env-file=.env scripts/migrate-user-to-moderator.mjs",

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, Outlet, useNavigate } from "react-router-dom"
-import { ArrowDownLeft, ArrowUpRight, LogOut, Settings } from "lucide-react"
+import { ArrowDownLeft, ArrowUpRight, LogOut, Settings, HelpCircle } from "lucide-react"
 import { clearToken } from "@/api/client"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/providers/AuthProvider"
+import { OnboardingDialog } from "@/components/OnboardingDialog"
 import { useProfileStore } from "@/stores/useProfileStore"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { useAccountsStore } from "@/stores/useAccountsStore"
@@ -35,18 +36,27 @@ function useDisplayName() {
   return full || user.username
 }
 
+const ONBOARDING_KEY = (uid: string) => `finstan-onboarding-shown-${uid}`
+
 export function AppLayout() {
   const { user, refreshProfile } = useAuth()
   const displayName = useDisplayName()
   const navigate = useNavigate()
   const loadProfile = useProfileStore((s) => s.load)
   const [quickAddType, setQuickAddType] = useState<"income" | "expense" | null>(null)
+  const [onboardingOpen, setOnboardingOpen] = useState(false)
 
   useEffect(() => {
     refreshProfile()
   }, [refreshProfile])
   useEffect(() => {
     if (user?.uid) loadProfile(user.uid)
+  }, [user?.uid])
+  useEffect(() => {
+    if (!user?.uid) return
+    if (!localStorage.getItem(ONBOARDING_KEY(user.uid))) {
+      setOnboardingOpen(true)
+    }
   }, [user?.uid])
 
   const handleLogout = () => {
@@ -77,7 +87,7 @@ export function AppLayout() {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar onOpenOnboarding={() => setOnboardingOpen(true)} />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
@@ -140,13 +150,27 @@ export function AppLayout() {
                 Расход
               </Button>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="ml-auto">
-                  {displayName}
-                  <Settings className="ml-2 size-4" />
-                </Button>
-              </DropdownMenuTrigger>
+            <div className="flex items-center gap-1 ml-auto">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 shrink-0"
+                    onClick={() => setOnboardingOpen(true)}
+                  >
+                    <HelpCircle className="size-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Инструкция</TooltipContent>
+              </Tooltip>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    {displayName}
+                    <Settings className="ml-2 size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
                   <Link to="/app/settings">Настройки</Link>
@@ -157,6 +181,7 @@ export function AppLayout() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
         </header>
         <div className="min-w-0 flex-1 overflow-auto p-4">
@@ -174,6 +199,12 @@ export function AppLayout() {
           title={quickAddType === "income" ? "Быстрый доход" : "Быстрый расход"}
         />
       )}
+
+      <OnboardingDialog
+        open={onboardingOpen}
+        onOpenChange={setOnboardingOpen}
+        onComplete={() => user?.uid && localStorage.setItem(ONBOARDING_KEY(user.uid), "1")}
+      />
     </SidebarProvider>
   )
 }

@@ -21,6 +21,7 @@ import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
 import { useCounterpartiesStore } from "@/stores/useCounterpartiesStore"
 import { formatAmount } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 import {
   filterTransactionsByPeriod,
   sumIncome,
@@ -168,7 +169,7 @@ export function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatAmount(totalIncome, "UZS")}
+              {formatAmount(totalIncome, getSystemCurrency())}
             </div>
             <p className="text-xs text-muted-foreground">
               {getMonthName(month)} {year}
@@ -181,7 +182,7 @@ export function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {formatAmount(totalExpense, "UZS")}
+              {formatAmount(totalExpense, getSystemCurrency())}
             </div>
             <p className="text-xs text-muted-foreground">
               {getMonthName(month)} {year}
@@ -198,7 +199,7 @@ export function ReportsPage() {
                 profit >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
-              {formatAmount(profit, "UZS")}
+              {formatAmount(profit, getSystemCurrency())}
             </div>
             <p className="text-xs text-muted-foreground">
               {getMonthName(month)} {year}
@@ -246,7 +247,7 @@ export function ReportsPage() {
                             </Link>
                           </TableCell>
                           <TableCell className="text-right text-green-600 font-medium">
-                            {formatAmount(c.amount, "UZS")}
+                            {formatAmount(c.amount, getSystemCurrency())}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -294,7 +295,7 @@ export function ReportsPage() {
                             </Link>
                           </TableCell>
                           <TableCell className="text-right text-red-600 font-medium">
-                            {formatAmount(c.amount, "UZS")}
+                            {formatAmount(c.amount, getSystemCurrency())}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -362,7 +363,7 @@ export function ReportsPage() {
                             }`}
                           >
                             {c.type === "income" ? "+" : "−"}
-                            {formatAmount(c.amount, "UZS")}
+                            {formatAmount(c.amount, getSystemCurrency())}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -422,10 +423,10 @@ export function ReportsPage() {
                               </Link>
                             </TableCell>
                             <TableCell className="text-right text-green-600">
-                              {formatAmount(c.income, "UZS")}
+                              {formatAmount(c.income, getSystemCurrency())}
                             </TableCell>
                             <TableCell className="text-right text-red-600">
-                              {formatAmount(c.expense, "UZS")}
+                              {formatAmount(c.expense, getSystemCurrency())}
                             </TableCell>
                             <TableCell
                               className={`text-right font-medium ${
@@ -433,7 +434,7 @@ export function ReportsPage() {
                               }`}
                             >
                               {total >= 0 ? "+" : ""}
-                              {formatAmount(total, "UZS")}
+                              {formatAmount(total, getSystemCurrency())}
                             </TableCell>
                           </TableRow>
                         )

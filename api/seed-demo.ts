@@ -1,44 +1,28 @@
-#!/usr/bin/env node
-/**
- * Тестовые данные: операции (20+), категории (5+), контрагенты (5+), проекты (2), счета, бюджеты, запланированные платежи.
- * Запуск: node --env-file=.env scripts/seed-test-data.mjs [username]
- * По умолчанию берётся первый пользователь из БД.
- */
-import { neon } from "@neondatabase/serverless"
-
-const url = process.env.DATABASE_URL
-if (!url) {
-  console.error("DATABASE_URL required. Use: node --env-file=.env scripts/seed-test-data.mjs")
-  process.exit(1)
-}
-
-const sql = neon(url)
-const companyId = "demo"
+import type { VercelRequest, VercelResponse } from "@vercel/node"
+import { verifyToken } from "../lib/jwt.js"
 
 function uuid() {
   return crypto.randomUUID()
 }
 
-async function main() {
-  const username = process.argv[2]
-  let userId
-  if (username) {
-    const rows = await sql`SELECT id FROM app_users WHERE username = ${username} LIMIT 1`
-    if (rows.length === 0) {
-      console.error(`User "${username}" not found`)
-      process.exit(1)
-    }
-    userId = rows[0].id
-  } else {
-    const rows = await sql`SELECT id FROM app_users ORDER BY username LIMIT 1`
-    if (rows.length === 0) {
-      console.error("No users in database. Run seed first: npm run seed")
-      process.exit(1)
-    }
-    userId = rows[0].id
-  }
+async function seedDemoForUser(sql: Awaited<ReturnType<typeof import("@neondatabase/serverless").neon>>, userId: string) {
+  const companyId = "demo"
 
-  console.log(`Seeding test data for user ${userId}${username ? ` (${username})` : ""}...`)
+  await sql`
+    CREATE TABLE IF NOT EXISTS companies (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      owner_user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      archived BOOLEAN NOT NULL DEFAULT false
+    )
+  `.catch(() => {})
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_companies (
+      user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      PRIMARY KEY (user_id, company_id)
+    )
+  `.catch(() => {})
 
   await sql`
     INSERT INTO companies (id, name, owner_user_id, archived)
@@ -51,7 +35,6 @@ async function main() {
     ON CONFLICT (user_id, company_id) DO NOTHING
   `.catch(() => {})
 
-  // Удаляем старые данные
   await sql`DELETE FROM transactions WHERE user_id = ${userId} AND company_id = ${companyId}`
   await sql`DELETE FROM budgets WHERE user_id = ${userId} AND company_id = ${companyId}`
   await sql`DELETE FROM planned_payments WHERE user_id = ${userId} AND company_id = ${companyId}`
@@ -60,7 +43,6 @@ async function main() {
   await sql`DELETE FROM counterparties WHERE user_id = ${userId} AND company_id = ${companyId}`
   await sql`DELETE FROM projects WHERE user_id = ${userId} AND company_id = ${companyId}`
 
-  // Счета
   const acc1 = uuid()
   const acc2 = uuid()
   const acc3 = uuid()
@@ -72,7 +54,6 @@ async function main() {
       (${acc3}, ${userId}, ${companyId}, 'Payme', 'ewallet', 'UZS', 0, false)
   `
 
-  // Категории (6)
   const catIds = Array.from({ length: 6 }, () => uuid())
   await sql`
     INSERT INTO categories (id, user_id, company_id, name, type, parent_id, recurring)
@@ -85,7 +66,6 @@ async function main() {
       (${catIds[5]}, ${userId}, ${companyId}, 'Налоги', 'expense', null, false)
   `
 
-  // Контрагенты (6)
   const cpIds = Array.from({ length: 6 }, () => uuid())
   await sql`
     INSERT INTO counterparties (id, user_id, company_id, name, type)
@@ -98,7 +78,6 @@ async function main() {
       (${cpIds[5]}, ${userId}, ${companyId}, 'Арендодатель', 'partner')
   `
 
-  // Проекты (2)
   const prj1 = uuid()
   const prj2 = uuid()
   await sql`
@@ -108,16 +87,18 @@ async function main() {
       (${prj2}, ${userId}, ${companyId}, 'Мобильное приложение')
   `
 
-  // Операции (25)
   const baseDate = new Date()
-  const txs = []
   const amounts = [250000, 500000, 1500000, 300000, 200000, 800000, 1200000, 450000, 600000, 350000]
   for (let i = 0; i < 25; i++) {
     const d = new Date(baseDate)
     d.setDate(d.getDate() - (24 - i))
     const date = d.toISOString().slice(0, 10)
     const amt = amounts[i % amounts.length]
-    let type, categoryId, counterpartyId, projectId, comment
+    let type: string
+    let categoryId: string | null
+    let counterpartyId: string | null
+    let projectId: string | null
+    let comment: string
     if (i % 5 === 0) {
       type = "income"
       categoryId = i % 2 ? catIds[0] : catIds[1]
@@ -137,30 +118,13 @@ async function main() {
       projectId = i % 3 === 0 ? prj1 : null
       comment = `Расход #${i + 1}`
     }
-    txs.push({
-      id: uuid(),
-      date,
-      amount: amt,
-      currency: "UZS",
-      type,
-      accountId: acc1,
-      toAccountId: type === "transfer" ? acc2 : null,
-      categoryId,
-      counterpartyId,
-      projectId,
-      comment,
-      plannedPaymentId: null,
-    })
-  }
-
-  for (const t of txs) {
+    const id = uuid()
     await sql`
       INSERT INTO transactions (id, user_id, company_id, date, amount, currency, type, account_id, to_account_id, category_id, counterparty_id, project_id, comment, planned_payment_id)
-      VALUES (${t.id}, ${userId}, ${companyId}, ${t.date}, ${t.amount}, ${t.currency}, ${t.type}, ${t.accountId}, ${t.toAccountId}, ${t.categoryId}, ${t.counterpartyId}, ${t.projectId}, ${t.comment}, ${t.plannedPaymentId})
+      VALUES (${id}, ${userId}, ${companyId}, ${date}, ${amt}, 'UZS', ${type}, ${acc1}, ${type === "transfer" ? acc2 : null}, ${categoryId}, ${counterpartyId}, ${projectId}, ${comment}, null)
     `
   }
 
-  // Бюджеты
   const year = baseDate.getFullYear()
   const month = baseDate.getMonth() + 1
   await sql`
@@ -171,7 +135,6 @@ async function main() {
       (${uuid()}, ${userId}, ${companyId}, ${catIds[4]}, ${year}, ${month}, 500000, 'UZS')
   `
 
-  // Запланированные платежи
   const ppDate = new Date(baseDate)
   ppDate.setDate(ppDate.getDate() + 7)
   const ppDateStr = ppDate.toISOString().slice(0, 10)
@@ -183,21 +146,49 @@ async function main() {
       (${uuid()}, ${userId}, ${companyId}, ${ppDateStr}, 800000, 'UZS', 'expense', 'Зарплаты', ${acc1}, ${catIds[2]}, null, 'none', null)
   `
 
-  // Обновляем балансы счетов
   for (const acc of [acc1, acc2, acc3]) {
     const rows = await sql`
-      SELECT
-        COALESCE(SUM(CASE WHEN type = 'income' AND account_id = ${acc} THEN amount WHEN type = 'expense' AND account_id = ${acc} THEN -amount WHEN type = 'transfer' AND account_id = ${acc} THEN -amount WHEN type = 'transfer' AND to_account_id = ${acc} THEN amount ELSE 0 END), 0) as bal
+      SELECT COALESCE(SUM(
+        CASE WHEN type = 'income' AND account_id = ${acc} THEN amount
+             WHEN type = 'expense' AND account_id = ${acc} THEN -amount
+             WHEN type = 'transfer' AND account_id = ${acc} THEN -amount
+             WHEN type = 'transfer' AND to_account_id = ${acc} THEN amount
+             ELSE 0 END
+      ), 0) as bal
       FROM transactions WHERE user_id = ${userId} AND company_id = ${companyId}
     `
     const balance = Number(rows[0]?.bal ?? 0)
     await sql`UPDATE accounts SET balance = ${balance} WHERE id = ${acc}`
   }
-
-  console.log("Done: 3 accounts, 6 categories, 6 counterparties, 2 projects, 25 transactions, 3 budgets, 3 planned payments")
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" })
+  }
+
+  const token = req.headers.authorization?.replace("Bearer ", "")
+  if (!token) return res.status(401).json({ error: "Войдите в систему" })
+
+  const payload = await verifyToken(token)
+  if (!payload) return res.status(401).json({ error: "Недействительный токен" })
+
+  const url = process.env.DATABASE_URL
+  if (!url) return res.status(500).json({ error: "DATABASE_URL not set" })
+
+  try {
+    const { neon } = await import("@neondatabase/serverless")
+    const sql = neon(url)
+    await seedDemoForUser(sql, payload.uid)
+
+    return res.status(200).json({
+      ok: true,
+      message: "Демо-данные загружены",
+      companyId: "demo",
+      counts: { accounts: 3, categories: 6, counterparties: 6, projects: 2, transactions: 25, budgets: 3, plannedPayments: 3 },
+    })
+  } catch (err) {
+    console.error("Seed demo:", err)
+    return res.status(500).json({ error: String((err as Error).message) })
+  }
+}

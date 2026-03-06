@@ -20,6 +20,7 @@ import {
   Archive,
   Trash2,
   ShieldCheck,
+  HelpCircle,
 } from "lucide-react"
 import {
   Sidebar,
@@ -81,7 +82,11 @@ const navItems = [
   { to: "/app/projects", icon: FolderKanban, label: "Проекты" },
 ]
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  onOpenOnboarding?: () => void
+}
+
+export function AppSidebar({ onOpenOnboarding }: AppSidebarProps) {
   const location = useLocation()
   const { state: sidebarState } = useSidebar()
   const { user } = useAuth()
@@ -355,6 +360,14 @@ export function AppSidebar() {
           <SidebarGroupLabel>Система</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {onOpenOnboarding && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={onOpenOnboarding} tooltip="Инструкция">
+                    <HelpCircle className="size-4" />
+                    <span>Инструкция</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={location.pathname.startsWith("/app/settings")} tooltip="Настройки">
                   <Link to="/app/settings">

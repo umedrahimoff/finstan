@@ -25,6 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const otp = otpRows[0] as { id: string } | undefined
     if (!otp) return res.status(401).json({ error: "Код неверный или истёк" })
     await sql`DELETE FROM telegram_otp_codes WHERE id = ${otp.id}`
+    await sql`UPDATE app_users SET last_login_at = now() WHERE id = ${user.id}`
     const token = await createToken({ uid: user.id, username: user.username, role: user.role ?? "moderator", tenantId: user.tenant_id ?? null })
     return res.status(200).json({ token })
   }
@@ -34,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!p) return res.status(400).json({ error: "Привяжите Telegram в настройках или введите пароль" })
     const bcrypt = (await import("bcryptjs")).default
     if (!(await bcrypt.compare(p, user.password_hash))) return res.status(401).json({ error: "Неверный пароль" })
+    await sql`UPDATE app_users SET last_login_at = now() WHERE id = ${user.id}`
     const token = await createToken({ uid: user.id, username: user.username, role: user.role ?? "moderator", tenantId: user.tenant_id ?? null })
     return res.status(200).json({ token })
   }

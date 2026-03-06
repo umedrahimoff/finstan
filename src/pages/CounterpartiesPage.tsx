@@ -30,6 +30,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCounterpartiesStore } from "@/stores/useCounterpartiesStore"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { formatAmount } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 import { COUNTERPARTY_TYPES } from "@/features/counterparties/counterpartyFormSchema"
 import { CounterpartyFormDialog } from "@/features/counterparties/CounterpartyFormDialog"
 import type { CounterpartyFormValues } from "@/features/counterparties/counterpartyFormSchema"
@@ -266,7 +267,7 @@ export function CounterpartiesPage() {
                         total >= 0 ? "text-green-600" : "text-red-600"
                       }`}
                     >
-                      {formatAmount(Math.abs(total), "UZS")}
+                      {formatAmount(Math.abs(total), getSystemCurrency())}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

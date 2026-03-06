@@ -37,8 +37,10 @@ import {
 import { useAuth } from "@/providers/AuthProvider"
 import { useCompanyStore } from "@/stores/useCompanyStore"
 import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
+import { apiFetch } from "@/api/client"
 import { parseBankCsv, type BankRow } from "@/lib/importBank"
 import { parseExportRU, type ExportRURow } from "@/lib/importExportRU"
+import { toCSV } from "@/lib/exportData"
 import { formatAmount } from "@/lib/currency"
 import { getSystemCurrency } from "@/stores/useSettingsStore"
 
@@ -54,6 +56,8 @@ export function SettingsDataPage() {
   const [importError, setImportError] = useState("")
   const [importAccountId, setImportAccountId] = useState("")
   const [importing, setImporting] = useState(false)
+  const [loadingDemo, setLoadingDemo] = useState(false)
+  const [demoError, setDemoError] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const allCompanies = useCompanyStore((s) => s.companies)
   const companies = useMemo(
@@ -240,26 +244,44 @@ export function SettingsDataPage() {
     setImportExportRURows([])
   }
 
-  const handleExportData = () => {
-    const companyId = useCompanyStore.getState().currentCompanyId ?? "default"
-    const ds = useCompanyDataStore.getState()
-    const data = {
-      transactions: ds.getTransactions(companyId),
-      accounts: ds.getAccounts(companyId),
-      categories: ds.getCategories(companyId),
-      counterparties: ds.getCounterparties(companyId),
-      budgets: ds.getBudgets(companyId),
-      plannedPayments: ds.getPlannedPayments(companyId),
-      projects: ds.getProjects(companyId),
-      exportedAt: new Date().toISOString(),
+  const handleLoadDemo = async () => {
+    setDemoError("")
+    setLoadingDemo(true)
+    try {
+      await apiFetch("/seed-demo", { method: "POST" })
+      const res = await apiFetch<{ byCompany?: Record<string, unknown>; companies?: { id: string; name: string; archived?: boolean }[] }>("/data")
+      if (res?.companies?.length) {
+        useCompanyStore.getState().setCompaniesFromServer(res.companies)
+      }
+      if (res?.byCompany && Object.keys(res.byCompany).length > 0) {
+        useCompanyDataStore.getState().setByCompanyFromServer(res.byCompany as never)
+        useCompanyStore.getState().ensureCompany("demo", "Демо")
+        useCompanyStore.getState().setCurrentCompany("demo")
+      }
+      window.location.reload()
+    } catch (e) {
+      setDemoError((e as Error).message || "Ошибка загрузки демо")
+    } finally {
+      setLoadingDemo(false)
     }
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    })
+  }
+
+  const handleExportCSV = () => {
+    const cid = useCompanyStore.getState().currentCompanyId ?? "default"
+    const ds = useCompanyDataStore.getState()
+    const { transactions, accounts, categories, counterparties, projects } = {
+      transactions: ds.getTransactions(cid),
+      accounts: ds.getAccounts(cid),
+      categories: ds.getCategories(cid),
+      counterparties: ds.getCounterparties(cid),
+      projects: ds.getProjects(cid),
+    }
+    const csv = toCSV(transactions, accounts, categories, counterparties, projects)
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `finstan-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `finstan-transactions-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -280,8 +302,15 @@ export function SettingsDataPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-4">
-              <Button variant="outline" onClick={handleExportData}>
-                Экспорт данных
+              <Button
+                variant="outline"
+                onClick={handleLoadDemo}
+                disabled={loadingDemo}
+              >
+                {loadingDemo ? "Загрузка..." : "Загрузить демо"}
+              </Button>
+              <Button variant="outline" onClick={handleExportCSV}>
+                Экспорт CSV
               </Button>
               <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
                 Импорт данных
@@ -296,8 +325,9 @@ export function SettingsDataPage() {
                 </Button>
               )}
             </div>
+            {demoError && <p className="text-sm text-destructive">{demoError}</p>}
             <p className="text-sm text-muted-foreground">
-              Экспорт сохраняет все операции в JSON. Импорт — Капиталбанк (CSV) или ExportRU (xlsx).
+              Демо: 25 операций, 3 счёта, 6 категорий, бюджеты. Экспорт — CSV. Импорт — Капиталбанк (CSV) или ExportRU (xlsx).
             </p>
           </CardContent>
         </Card>
@@ -434,8 +464,8 @@ export function SettingsDataPage() {
                         <TableCell className="max-w-[150px] truncate" title={r.accountName}>
                           {r.accountName || "—"}
                         </TableCell>
-                        <TableCell>{r.debit ? formatAmount(r.debit, "UZS") : "—"}</TableCell>
-                        <TableCell>{r.credit ? formatAmount(r.credit, "UZS") : "—"}</TableCell>
+                        <TableCell>{r.debit ? formatAmount(r.debit, getSystemCurrency()) : "—"}</TableCell>
+                        <TableCell>{r.credit ? formatAmount(r.credit, getSystemCurrency()) : "—"}</TableCell>
                         <TableCell className="max-w-[200px] truncate" title={r.purpose}>
                           {r.purpose || "—"}
                         </TableCell>
@@ -470,7 +500,7 @@ export function SettingsDataPage() {
                         <TableRow key={i}>
                           <TableCell>{r.date}</TableCell>
                           <TableCell>{r.type === "income" ? "Доход" : "Расход"}</TableCell>
-                          <TableCell>{formatAmount(r.amount, "UZS")}</TableCell>
+                          <TableCell>{formatAmount(r.amount, getSystemCurrency())}</TableCell>
                           <TableCell className="max-w-[150px] truncate" title={r.counterparty}>
                             {r.counterparty || "—"}
                           </TableCell>
