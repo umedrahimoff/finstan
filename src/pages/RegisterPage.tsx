@@ -66,7 +66,11 @@ export function RegisterPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-xl font-semibold">Регистрация</h1>
         <p className="text-sm text-muted-foreground">
-          Отправьте /start боту @finstanbasebot в Telegram, получите код и введите его ниже.
+          Отправьте /start боту{" "}
+          <a href="https://t.me/finstanbasebot" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+            @finstanbasebot
+          </a>{" "}
+          в Telegram, получите код и введите его ниже.
         </p>
         <div className="space-y-2">
           <Label htmlFor="code">Код из Telegram</Label>
