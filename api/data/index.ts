@@ -113,22 +113,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sql = neon(url)
 
     if (req.method === "GET") {
-      let companiesRows: { id: string; name: string; archived: boolean; owner_user_id: string }[]
+      type CompanyRow = { id: string; name: string; archived: boolean; owner_user_id: string }
+      let companiesRows: CompanyRow[]
       if (auth.tenantId == null) {
-        companiesRows = await sql`
+        companiesRows = (await sql`
           SELECT c.id, c.name, c.archived, c.owner_user_id
           FROM companies c
           WHERE c.owner_user_id = ${auth.uid}
-        `.catch(() => [])
+        `.catch(() => [])) as CompanyRow[]
       } else {
-        companiesRows = await sql`
+        companiesRows = (await sql`
           SELECT c.id, c.name, c.archived, c.owner_user_id
           FROM companies c
           JOIN app_users ou ON c.owner_user_id = ou.id
           WHERE ou.tenant_id = ${auth.tenantId}
             AND (c.owner_user_id = ${auth.uid}
               OR c.id IN (SELECT company_id FROM user_companies WHERE user_id = ${auth.uid}))
-        `.catch(() => [])
+        `.catch(() => [])) as CompanyRow[]
       }
 
       const userCompanies = Array.isArray(companiesRows) ? companiesRows : []

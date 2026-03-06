@@ -24,23 +24,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const username = typeof req.query.username === "string" ? req.query.username : null
     let userIds: { id: string }[]
+    const toUserId = (r: unknown) => (r as { id: string }).id
     if (username) {
       const rows = await sql`SELECT id FROM app_users WHERE username = ${username}`
       if (rows.length === 0) {
         return res.status(404).json({ error: `User "${username}" not found` })
       }
-      userIds = rows
+      userIds = rows.map((r) => ({ id: toUserId(r) }))
     } else if (seedAll) {
-      userIds = await sql`SELECT id FROM app_users`
-      if (userIds.length === 0) {
+      const rows = await sql`SELECT id FROM app_users`
+      if (rows.length === 0) {
         return res.status(404).json({ error: "No users in database" })
       }
+      userIds = rows.map((r) => ({ id: toUserId(r) }))
     } else {
       const rows = await sql`SELECT id FROM app_users ORDER BY username LIMIT 1`
       if (rows.length === 0) {
         return res.status(404).json({ error: "No users in database" })
       }
-      userIds = rows
+      userIds = rows.map((r) => ({ id: toUserId(r) }))
     }
 
     const seeded: string[] = []
