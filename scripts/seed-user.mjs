@@ -9,20 +9,29 @@ if (!url) {
 
 const username = process.argv[2] || "admin"
 const password = process.argv[3] || "admin123"
+const role = process.argv[4] || "admin"
 
 const sql = neon(url)
 await sql`
   CREATE TABLE IF NOT EXISTS app_users (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     username TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user'
   )
 `
 await sql`CREATE INDEX IF NOT EXISTS idx_app_users_username ON app_users(username)`
+await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'`
+await sql`
+  CREATE TABLE IF NOT EXISTS user_data (
+    user_id TEXT PRIMARY KEY REFERENCES app_users(id) ON DELETE CASCADE,
+    data JSONB NOT NULL DEFAULT '{}'
+  )
+`
 const hash = await bcrypt.hash(password, 10)
 await sql`
-  INSERT INTO app_users (username, password_hash)
-  VALUES (${username}, ${hash})
-  ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash
+  INSERT INTO app_users (username, password_hash, role)
+  VALUES (${username}, ${hash}, ${role})
+  ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role
 `
-console.log(`User "${username}" ready`)
+console.log(`User "${username}" (${role}) ready`)

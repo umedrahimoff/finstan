@@ -19,12 +19,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { neon } = await import("@neondatabase/serverless")
     const { createToken } = await import("../../lib/jwt.js")
     const sql = neon(url)
-    const rows = await sql`SELECT id, username, password_hash FROM app_users WHERE username = ${u} LIMIT 1`
-    const user = rows[0] as { id: string; username: string; password_hash: string } | undefined
+    const rows = await sql`SELECT id, username, password_hash, role FROM app_users WHERE username = ${u} LIMIT 1`
+    const user = rows[0] as { id: string; username: string; password_hash: string; role?: string } | undefined
     if (!user || !(await bcrypt.compare(p, user.password_hash))) {
       return res.status(401).json({ error: "Неверный логин или пароль" })
     }
-    const token = await createToken({ uid: user.id, username: user.username })
+    const token = await createToken({ uid: user.id, username: user.username, role: user.role ?? "user" })
     return res.status(200).json({ token })
   } catch (err) {
     console.error("Login:", err)

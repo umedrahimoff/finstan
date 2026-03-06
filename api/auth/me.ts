@@ -9,5 +9,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!token) return res.status(401).json({ error: "No token" })
   const payload = await verifyToken(token)
   if (!payload) return res.status(401).json({ error: "Invalid token" })
-  return res.status(200).json({ uid: payload.uid, username: payload.username })
+  return res.status(200).json({
+    uid: payload.uid,
+    username: payload.username,
+    role: payload.role ?? "user",
+  })
 }

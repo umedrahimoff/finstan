@@ -74,6 +74,7 @@ interface CompanyDataState {
   removeCompanyData: (companyId: string) => void
   resetCompanyData: (companyId: string) => void
   resetCompanyDataBatch: (companyIds: string[]) => void
+  setByCompanyFromServer: (byCompany: ByCompany) => void
 }
 
 export const useCompanyDataStore = create<CompanyDataState>()(
@@ -135,6 +136,8 @@ export const useCompanyDataStore = create<CompanyDataState>()(
           return { byCompany: next }
         })
       },
+
+      setByCompanyFromServer: (byCompany) => set({ byCompany }),
 
       addAccount: (acc) => {
         const companyId = getCompanyId()

@@ -4,6 +4,7 @@ import { getToken, clearToken, apiFetch } from "@/api/client"
 interface AuthUser {
   uid: string
   username: string
+  role: string
 }
 
 interface AuthContextValue {

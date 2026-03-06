@@ -9,6 +9,7 @@ function getSecret() {
 export interface JwtPayload {
   uid: string
   username: string
+  role?: string
 }
 
 export async function createToken(payload: JwtPayload): Promise<string> {

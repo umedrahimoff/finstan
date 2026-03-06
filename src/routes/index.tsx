@@ -14,6 +14,7 @@ import { AnalyticsPage } from "@/pages/AnalyticsPage"
 import { ProjectsPage } from "@/pages/ProjectsPage"
 import { SettingsPage } from "@/pages/SettingsPage"
 import { SettingsProfilePage } from "@/pages/settings/SettingsProfilePage"
+import { SettingsUsersPage } from "@/pages/settings/SettingsUsersPage"
 import { SettingsGeneralPage } from "@/pages/settings/SettingsGeneralPage"
 import { SettingsDataPage } from "@/pages/settings/SettingsDataPage"
 import { SettingsAboutPage } from "@/pages/settings/SettingsAboutPage"
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/settings/profile" replace /> },
           { path: "profile", element: <SettingsProfilePage /> },
+          { path: "users", element: <SettingsUsersPage /> },
           { path: "general", element: <SettingsGeneralPage /> },
           { path: "data", element: <SettingsDataPage /> },
           { path: "about", element: <SettingsAboutPage /> },
