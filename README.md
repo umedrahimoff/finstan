@@ -23,6 +23,6 @@ npm run dev
 Только вход (логин + пароль), без регистрации.
 
 1. Выполни `scripts/init-neon.sql` в Neon SQL Editor
-2. Создай пользователя: `npm run seed` (admin/admin123) или `npm run seed -- admin mypass admin`
-3. Seed создаёт таблицы app_users и user_data (данные хранятся в Neon)
+2. Создай пользователя и таблицы: `npm run seed` (admin/admin123)
+3. Отдельные таблицы: accounts, categories, counterparties, transactions, budgets, planned_payments, projects
 3. В Vercel: `DATABASE_URL`, `JWT_SECRET`

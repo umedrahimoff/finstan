@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "seed": "node --env-file=.env scripts/seed-user.mjs",
+    "init-tables": "node --env-file=.env scripts/init-tables.mjs",
+    "db:init": "npm run seed && npm run init-tables",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
