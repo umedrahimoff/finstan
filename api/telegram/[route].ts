@@ -24,8 +24,7 @@ function randomOtp(): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const path = (req.query.path as string[] | undefined) ?? []
-  const route = path[0] ?? ""
+  const route = (req.query.route as string) ?? ""
 
   if (route === "webhook") {
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" })
