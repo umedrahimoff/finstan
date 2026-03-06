@@ -25,7 +25,8 @@ import { useAccountsStore } from "@/stores/useAccountsStore"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
 import { useCounterpartiesStore } from "@/stores/useCounterpartiesStore"
 
-const CURRENCIES = [{ value: "UZS", label: "UZS" }]
+import { CURRENCIES } from "@/lib/currencies"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 const NONE_VALUE = "__none__"
 
 interface PlannedPaymentFormProps {
@@ -59,7 +60,7 @@ export function PlannedPaymentForm({
     defaultValues: {
       date: defaultValues?.date ?? new Date().toISOString().slice(0, 10),
       amount: defaultValues?.amount ?? 0,
-      currency: defaultValues?.currency ?? "UZS",
+      currency: defaultValues?.currency ?? getSystemCurrency(),
       type: defaultValues?.type ?? "expense",
       title: defaultValues?.title ?? "",
       accountId: defaultValues?.accountId ?? primaryAccountId,

@@ -12,6 +12,7 @@ import type { PlannedPayment } from "@/types"
 import { PlannedPaymentFormDialog } from "@/features/plannedPayments/PlannedPaymentFormDialog"
 import type { PlannedPaymentFormValues } from "@/features/plannedPayments/plannedPaymentFormSchema"
 import { plannedPaymentToEvents } from "@/lib/recurrence"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 import "react-big-calendar/lib/css/react-big-calendar.css"
 
 const locales = { "ru": ru }
@@ -166,7 +167,7 @@ export function CalendarPage() {
       ? {
           date: format(selectedDate, "yyyy-MM-dd"),
           amount: 0,
-          currency: "UZS",
+          currency: getSystemCurrency(),
           type: "expense" as const,
           title: "",
           accountId: primaryAccountId,

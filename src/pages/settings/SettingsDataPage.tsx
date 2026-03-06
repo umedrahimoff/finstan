@@ -40,6 +40,7 @@ import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
 import { parseBankCsv, type BankRow } from "@/lib/importBank"
 import { parseExportRU, type ExportRURow } from "@/lib/importExportRU"
 import { formatAmount } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 
 export function SettingsDataPage() {
   const { user } = useAuth()
@@ -226,7 +227,7 @@ export function SettingsDataPage() {
       txs.map((t) => ({
         date: t.date,
         amount: t.amount,
-        currency: "UZS",
+        currency: getSystemCurrency(),
         type: t.type,
         accountId: effectiveAccountId,
         counterpartyId: t.counterpartyId,

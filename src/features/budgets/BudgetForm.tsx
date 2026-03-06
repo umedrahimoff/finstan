@@ -8,8 +8,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { AmountInput } from "@/components/AmountInput"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -20,6 +20,8 @@ import {
 import type { BudgetFormValues } from "./budgetFormSchema"
 import { budgetFormSchema, MONTH_NAMES } from "./budgetFormSchema"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
+import { CURRENCIES } from "@/lib/currencies"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 
 const MONTH_OPTIONS = Object.entries(MONTH_NAMES).map(([value, label]) => ({
   value,
@@ -51,7 +53,7 @@ export function BudgetForm({
       year: defaultValues?.year ?? currentYear,
       month: defaultValues?.month ?? new Date().getMonth() + 1,
       amount: defaultValues?.amount ?? 0,
-      currency: defaultValues?.currency ?? "UZS",
+      currency: defaultValues?.currency ?? getSystemCurrency(),
     },
   })
 
@@ -147,24 +149,53 @@ export function BudgetForm({
             )}
           />
         </div>
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Лимит (сум)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={1}
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Валюта</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Лимит</FormLabel>
+                <FormControl>
+                  <AmountInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="1 000 000"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Отмена

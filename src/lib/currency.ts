@@ -1,23 +1,21 @@
-const UZS_LOCALE = "uz-UZ"
-
-const numberFormat = new Intl.NumberFormat(UZS_LOCALE, {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-  useGrouping: true,
-})
+/** Разделитель тысяч — пробел для читаемости (5 000 002) */
+function formatWithSpaces(n: number): string {
+  const s = Math.round(n).toString()
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0")
+}
 
 export function formatUzs(amount: number): string {
-  return numberFormat.format(amount) + " UZS"
+  return formatWithSpaces(amount) + " UZS"
 }
 
 export function formatAmount(amount: number, currency: string = "UZS"): string {
-  return numberFormat.format(amount) + " " + currency
+  return formatWithSpaces(amount) + " " + currency
 }
 
 /** Форматирование для поля ввода (с пробелами) */
 export function formatAmountForInput(amount: number): string {
   if (!amount || isNaN(amount)) return ""
-  return numberFormat.format(amount)
+  return formatWithSpaces(amount)
 }
 
 /** Парсинг из строки (убирает пробелы и прочие не-цифры) */
@@ -34,6 +32,6 @@ export function formatCompact(amount: number, currency: string = "UZS"): string 
   let val: string
   if (abs >= 1_000_000) val = (abs / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M"
   else if (abs >= 1_000) val = (abs / 1_000).toFixed(1).replace(/\.0$/, "") + "K"
-  else val = abs.toFixed(0)
+  else val = formatWithSpaces(abs)
   return sign + val + " " + currency
 }

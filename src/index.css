@@ -162,3 +162,41 @@
   0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
   50% { transform: translateY(-8px) scale(1.05); opacity: 0.6; }
 }
+
+/* Landing: минималистичные анимации */
+@keyframes landing-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes landing-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.landing-animate-fade-up {
+  animation: landing-fade-up 0.6s ease-out forwards;
+}
+
+.landing-animate-fade-in {
+  animation: landing-fade-in 0.5s ease-out forwards;
+}
+
+.landing-hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.landing-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+}
+
+.landing-img-wrap {
+  overflow: hidden;
+  border-radius: 1rem;
+}
+.landing-img-wrap img {
+  transition: transform 0.4s ease;
+}
+.landing-img-wrap:hover img {
+  transform: scale(1.02);
+}

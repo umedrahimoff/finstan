@@ -25,6 +25,8 @@ import { useAccountsStore } from "@/stores/useAccountsStore"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
 import { useCounterpartiesStore } from "@/stores/useCounterpartiesStore"
 import { useProjectsStore } from "@/stores/useProjectsStore"
+import { CURRENCIES } from "@/lib/currencies"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 
 interface TransactionFormProps {
   defaultValues?: Partial<TransactionFormValues>
@@ -37,8 +39,6 @@ const TRANSACTION_TYPES = [
   { value: "expense", label: "Расход" },
   { value: "transfer", label: "Перевод" },
 ] as const
-
-const CURRENCIES = [{ value: "UZS", label: "UZS" }]
 
 export function TransactionForm({
   defaultValues,
@@ -60,7 +60,7 @@ export function TransactionForm({
       date: defaultValues?.date ?? new Date().toISOString().slice(0, 10),
       type: defaultValues?.type ?? "expense",
       amount: defaultValues?.amount ?? 0,
-      currency: defaultValues?.currency ?? "UZS",
+      currency: defaultValues?.currency ?? getSystemCurrency(),
       accountId: defaultValues?.accountId ?? primaryAccountId,
       toAccountId: defaultValues?.toAccountId ?? "",
       categoryId: defaultValues?.categoryId ?? "",

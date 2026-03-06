@@ -25,6 +25,7 @@ import { TransactionFormDialog } from "@/features/transactions/TransactionFormDi
 import type { TransactionFormValues } from "@/features/transactions/transactionFormSchema"
 import { calculateAccountBalance } from "@/lib/accountBalance"
 import { formatAmount, formatCompact } from "@/lib/currency"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 
 function useDisplayName() {
   const { user } = useAuth()
@@ -68,7 +69,7 @@ export function AppLayout() {
     return {
       type: quickAddType,
       date: new Date().toISOString().slice(0, 10),
-      currency: "UZS",
+      currency: getSystemCurrency(),
       amount: 0,
       accountId: primaryAccountId,
     }

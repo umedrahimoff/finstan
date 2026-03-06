@@ -20,7 +20,8 @@ import {
 import type { AccountFormValues } from "./accountFormSchema"
 import { accountFormSchema, ACCOUNT_TYPES } from "./accountFormSchema"
 
-const CURRENCIES = [{ value: "UZS", label: "UZS" }]
+import { CURRENCIES } from "@/lib/currencies"
+import { getSystemCurrency } from "@/stores/useSettingsStore"
 
 interface AccountFormProps {
   defaultValues?: Partial<AccountFormValues>
@@ -38,7 +39,7 @@ export function AccountForm({
     defaultValues: {
       name: defaultValues?.name ?? "",
       type: defaultValues?.type ?? "bank",
-      currency: defaultValues?.currency ?? "UZS",
+      currency: defaultValues?.currency ?? getSystemCurrency(),
     },
   })
 
