@@ -6,9 +6,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <DataSyncProvider>
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
+        <TooltipProvider>{children}</TooltipProvider>
       </DataSyncProvider>
     </AuthProvider>
   )

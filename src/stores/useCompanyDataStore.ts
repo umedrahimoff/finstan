@@ -37,6 +37,14 @@ function getOrInitCompany(state: { byCompany: ByCompany }, companyId: string): C
   return getInitialCompanyData(companyId)
 }
 
+const defaultDataCache: Record<string, CompanyData> = {}
+function getCachedDefault(companyId: string): CompanyData {
+  if (!defaultDataCache[companyId]) {
+    defaultDataCache[companyId] = getInitialCompanyData(companyId)
+  }
+  return defaultDataCache[companyId]
+}
+
 interface CompanyDataState {
   byCompany: ByCompany
   getAccounts: (companyId: string) => Account[]
@@ -85,19 +93,19 @@ export const useCompanyDataStore = create<CompanyDataState>()(
       },
 
       getAccounts: (companyId) =>
-        get().byCompany[companyId]?.accounts ?? getInitialCompanyData(companyId).accounts,
+        get().byCompany[companyId]?.accounts ?? getCachedDefault(companyId).accounts,
       getCategories: (companyId) =>
-        get().byCompany[companyId]?.categories ?? getInitialCompanyData(companyId).categories,
+        get().byCompany[companyId]?.categories ?? getCachedDefault(companyId).categories,
       getCounterparties: (companyId) =>
-        get().byCompany[companyId]?.counterparties ?? getInitialCompanyData(companyId).counterparties,
+        get().byCompany[companyId]?.counterparties ?? getCachedDefault(companyId).counterparties,
       getTransactions: (companyId) =>
-        get().byCompany[companyId]?.transactions ?? getInitialCompanyData(companyId).transactions,
+        get().byCompany[companyId]?.transactions ?? getCachedDefault(companyId).transactions,
       getBudgets: (companyId) =>
-        get().byCompany[companyId]?.budgets ?? getInitialCompanyData(companyId).budgets,
+        get().byCompany[companyId]?.budgets ?? getCachedDefault(companyId).budgets,
       getPlannedPayments: (companyId) =>
-        get().byCompany[companyId]?.plannedPayments ?? getInitialCompanyData(companyId).plannedPayments,
+        get().byCompany[companyId]?.plannedPayments ?? getCachedDefault(companyId).plannedPayments,
       getProjects: (companyId) =>
-        get().byCompany[companyId]?.projects ?? getInitialCompanyData(companyId).projects,
+        get().byCompany[companyId]?.projects ?? getCachedDefault(companyId).projects,
 
       initCompanyIfNeeded: (companyId) => {
         const state = get()
