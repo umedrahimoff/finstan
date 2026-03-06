@@ -21,6 +21,7 @@ interface CompanyState {
   deleteCompany: (id: string) => void
   setCurrentCompany: (id: string) => void
   ensureDefaultCompany: () => string
+  ensureCompany: (id: string, name: string) => void
 }
 
 function generateId() {
@@ -106,6 +107,14 @@ export const useCompanyStore = create<CompanyState>()(
           return DEFAULT_COMPANY_ID
         }
         return state.currentCompanyId ?? active[0].id
+      },
+
+      ensureCompany: (id, name) => {
+        const state = get()
+        if (state.companies.some((c) => c.id === id)) return
+        set((s) => ({
+          companies: [...s.companies, { id, name }],
+        }))
       },
     }),
     { name: STORAGE_KEY }

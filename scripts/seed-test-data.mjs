@@ -13,7 +13,7 @@ if (!url) {
 }
 
 const sql = neon(url)
-const companyId = "default"
+const companyId = "demo"
 
 function uuid() {
   return crypto.randomUUID()

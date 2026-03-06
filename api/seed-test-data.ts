@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { neon } = await import("@neondatabase/serverless")
     const sql = neon(url)
-    const companyId = "default"
+    const companyId = "demo"
 
     const username = typeof req.query.username === "string" ? req.query.username : null
     let userId: string

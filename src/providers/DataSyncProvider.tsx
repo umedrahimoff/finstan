@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react"
 import { useAuth } from "./AuthProvider"
 import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
+import { useCompanyStore } from "@/stores/useCompanyStore"
 import { apiFetch } from "@/api/client"
 
 let syncTimeout: ReturnType<typeof setTimeout> | null = null
@@ -25,6 +26,9 @@ export function DataSyncProvider({ children }: { children: React.ReactNode }) {
       .then((res) => {
         if (res?.byCompany && Object.keys(res.byCompany).length > 0) {
           useCompanyDataStore.getState().setByCompanyFromServer(res.byCompany as never)
+          if (res.byCompany.demo) {
+            useCompanyStore.getState().ensureCompany("demo", "Демо")
+          }
         } else {
           const current = useCompanyDataStore.getState().byCompany
           if (Object.keys(current).length > 0) {
