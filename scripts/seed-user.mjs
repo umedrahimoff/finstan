@@ -22,6 +22,7 @@ await sql`
 `
 await sql`CREATE INDEX IF NOT EXISTS idx_app_users_username ON app_users(username)`
 await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'`
+await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS frozen BOOLEAN NOT NULL DEFAULT false`
 const hash = await bcrypt.hash(password, 10)
 await sql`
   INSERT INTO app_users (username, password_hash, role)

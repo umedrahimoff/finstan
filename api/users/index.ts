@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const { neon } = await import("@neondatabase/serverless")
       const sql = neon(url)
-      const rows = await sql`SELECT id, username, role FROM app_users ORDER BY username`
+      const rows = await sql`SELECT id, username, role, frozen FROM app_users ORDER BY username`
       return res.status(200).json(rows)
     } catch (err) {
       console.error("Users list:", err)
@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       const u = (username ?? "").trim()
       const p = password ?? ""
-      const r = (role ?? "moderator") === "admin" ? "admin" : "moderator"
+      const r = (role ?? "user") === "admin" ? "admin" : (role ?? "user") === "moderator" ? "moderator" : "user"
       if (!u || u.length < 2) return res.status(400).json({ error: "Логин минимум 2 символа" })
       if (!p || p.length < 4) return res.status(400).json({ error: "Пароль минимум 4 символа" })
       if (auth.role !== "admin" && r === "admin") {
@@ -59,9 +59,85 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const hash = await bcrypt.hash(p, 10)
       const id = crypto.randomUUID()
       await sql`INSERT INTO app_users (id, username, password_hash, role) VALUES (${id}, ${u}, ${hash}, ${r})`
-      return res.status(200).json({ id, username: u, role: r })
+      return res.status(200).json({ id, username: u, role: r, frozen: false })
     } catch (err) {
       console.error("User add:", err)
+      return res.status(500).json({ error: String((err as Error).message) })
+    }
+  }
+
+  if (req.method === "PATCH") {
+    if (!canManage(auth)) return res.status(403).json({ error: "Нет прав" })
+    try {
+      const { id, username, password, role, frozen } = (req.body ?? {}) as {
+        id?: string
+        username?: string
+        password?: string
+        role?: string
+        frozen?: boolean
+      }
+      if (!id) return res.status(400).json({ error: "Укажите id пользователя" })
+      const { neon } = await import("@neondatabase/serverless")
+      const sql = neon(url)
+      const existing = await sql`SELECT id, role FROM app_users WHERE id = ${id} LIMIT 1`
+      const target = existing[0] as { id: string; role: string } | undefined
+      if (!target) return res.status(404).json({ error: "Пользователь не найден" })
+      if (target.role === "admin" && auth.role !== "admin") {
+        return res.status(403).json({ error: "Нельзя редактировать админа" })
+      }
+      let updated = false
+      if (username !== undefined) {
+        const u = username.trim()
+        if (u.length < 2) return res.status(400).json({ error: "Логин минимум 2 символа" })
+        const dup = await sql`SELECT id FROM app_users WHERE username = ${u} AND id != ${id} LIMIT 1`
+        if (dup.length > 0) return res.status(400).json({ error: "Логин уже занят" })
+        await sql`UPDATE app_users SET username = ${u} WHERE id = ${id}`
+        updated = true
+      }
+      if (password !== undefined && password !== "") {
+        if (password.length < 4) return res.status(400).json({ error: "Пароль минимум 4 символа" })
+        const bcrypt = (await import("bcryptjs")).default
+        const hash = await bcrypt.hash(password, 10)
+        await sql`UPDATE app_users SET password_hash = ${hash} WHERE id = ${id}`
+        updated = true
+      }
+      if (role !== undefined) {
+        const r = role === "admin" ? "admin" : role === "moderator" ? "moderator" : "user"
+        if (r === "admin" && auth.role !== "admin") return res.status(403).json({ error: "Только админ может назначать админа" })
+        if (target.role === "admin" && auth.uid === id) return res.status(400).json({ error: "Нельзя понизить свою роль" })
+        await sql`UPDATE app_users SET role = ${r} WHERE id = ${id}`
+        updated = true
+      }
+      if (frozen !== undefined) {
+        if (target.role === "admin" && auth.uid === id) return res.status(400).json({ error: "Нельзя заблокировать себя" })
+        await sql`UPDATE app_users SET frozen = ${frozen === true} WHERE id = ${id}`
+        updated = true
+      }
+      if (!updated) return res.status(400).json({ error: "Нет изменений" })
+      const rows = await sql`SELECT id, username, role, frozen FROM app_users WHERE id = ${id}`
+      return res.status(200).json(rows[0])
+    } catch (err) {
+      console.error("User update:", err)
+      return res.status(500).json({ error: String((err as Error).message) })
+    }
+  }
+
+  if (req.method === "DELETE") {
+    if (!canManage(auth)) return res.status(403).json({ error: "Нет прав" })
+    try {
+      const id = (req.query as { id?: string }).id ?? (req.body as { id?: string })?.id
+      if (!id) return res.status(400).json({ error: "Укажите id пользователя" })
+      if (id === auth.uid) return res.status(400).json({ error: "Нельзя удалить себя" })
+      const { neon } = await import("@neondatabase/serverless")
+      const sql = neon(url)
+      const target = await sql`SELECT role FROM app_users WHERE id = ${id} LIMIT 1`
+      const t = target[0] as { role: string } | undefined
+      if (!t) return res.status(404).json({ error: "Пользователь не найден" })
+      if (t.role === "admin" && auth.role !== "admin") return res.status(403).json({ error: "Только админ может удалить админа" })
+      await sql`DELETE FROM app_users WHERE id = ${id}`
+      return res.status(200).json({ ok: true })
+    } catch (err) {
+      console.error("User delete:", err)
       return res.status(500).json({ error: String((err as Error).message) })
     }
   }

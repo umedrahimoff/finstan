@@ -63,12 +63,14 @@ export function CategoriesPage() {
   } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingBatch, setDeletingBatch] = useState(false)
-  const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense" | "both">("all")
+  const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all")
 
   const filteredCategories =
     typeFilter === "all"
       ? categories
-      : categories.filter((c) => c.type === typeFilter)
+      : typeFilter === "income"
+        ? categories.filter((c) => c.type === "income" || c.type === "both")
+        : categories.filter((c) => c.type === "expense" || c.type === "both")
 
   const getCategoryTotal = (categoryId: string) => {
     return transactions.reduce((sum, tx) => {
@@ -144,7 +146,6 @@ export function CategoriesPage() {
           <TabsTrigger value="all">Все</TabsTrigger>
           <TabsTrigger value="income">Доходы</TabsTrigger>
           <TabsTrigger value="expense">Расходы</TabsTrigger>
-          <TabsTrigger value="both">Доход и расход</TabsTrigger>
         </TabsList>
       </Tabs>
 

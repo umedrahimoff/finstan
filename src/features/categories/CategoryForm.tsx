@@ -10,21 +10,8 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import type { CategoryFormValues } from "./categoryFormSchema"
 import { categoryFormSchema } from "./categoryFormSchema"
-
-const CATEGORY_TYPES = [
-  { value: "income", label: "Доход" },
-  { value: "expense", label: "Расход" },
-  { value: "both", label: "Доход и расход" },
-] as const
 
 interface CategoryFormProps {
   defaultValues?: Partial<CategoryFormValues>
@@ -76,24 +63,39 @@ export function CategoryForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Тип</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите тип" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {CATEGORY_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-4 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value === "income" || field.value === "both"}
+                    onChange={(e) => {
+                      const isIncome = e.target.checked
+                      const isExpense = field.value === "expense" || field.value === "both"
+                      if (!isIncome && !isExpense) return
+                      field.onChange(isIncome && isExpense ? "both" : isIncome ? "income" : "expense")
+                    }}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <span>Доход</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value === "expense" || field.value === "both"}
+                    onChange={(e) => {
+                      const isExpense = e.target.checked
+                      const isIncome = field.value === "income" || field.value === "both"
+                      if (!isIncome && !isExpense) return
+                      field.onChange(isIncome && isExpense ? "both" : isIncome ? "income" : "expense")
+                    }}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <span>Расход</span>
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Выберите один или оба типа — категория появится в выбранных разделах
+              </p>
               <FormMessage />
             </FormItem>
           )}
