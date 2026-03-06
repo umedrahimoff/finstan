@@ -4,7 +4,7 @@ import { CURRENCIES, type CurrencyCode } from "@/lib/currencies"
 
 const STORAGE_KEY = "finstan-settings"
 const DEFAULT_CURRENCY: CurrencyCode = "UZS"
-const VALID_CODES = new Set(CURRENCIES.map((c) => c.value))
+const VALID_CODES = new Set<string>(CURRENCIES.map((c) => c.value))
 
 function isValidCurrency(c: string | undefined): c is CurrencyCode {
   return !!c && VALID_CODES.has(c)
