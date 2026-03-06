@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { verifyToken } from "../lib/jwt.js"
+import { verifyToken } from "../../lib/jwt.js"
 
 function uuid() {
   return crypto.randomUUID()
