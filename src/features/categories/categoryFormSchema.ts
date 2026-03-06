@@ -2,7 +2,7 @@ import { z } from "zod"
 
 export const categoryFormSchema = z.object({
   name: z.string().min(1, "Укажите название"),
-  type: z.enum(["income", "expense"]),
+  type: z.enum(["income", "expense", "both"]),
   recurring: z.boolean().optional(),
 })
 

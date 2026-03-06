@@ -34,15 +34,15 @@ import { CategoryFormDialog } from "@/features/categories/CategoryFormDialog"
 import type { CategoryFormValues } from "@/features/categories/categoryFormSchema"
 
 function getCategoryTypeIcon(type: string) {
-  return type === "income" ? (
-    <ArrowDownLeft className="size-4 text-green-600" />
-  ) : (
-    <ArrowUpRight className="size-4 text-red-600" />
-  )
+  if (type === "income") return <ArrowDownLeft className="size-4 text-green-600" />
+  if (type === "expense") return <ArrowUpRight className="size-4 text-red-600" />
+  return <ArrowDownLeft className="size-4 text-muted-foreground" />
 }
 
 function getCategoryTypeLabel(type: string) {
-  return type === "income" ? "Доход" : "Расход"
+  if (type === "income") return "Доход"
+  if (type === "expense") return "Расход"
+  return "Доход и расход"
 }
 
 export function CategoriesPage() {
@@ -63,7 +63,7 @@ export function CategoriesPage() {
   } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingBatch, setDeletingBatch] = useState(false)
-  const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all")
+  const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense" | "both">("all")
 
   const filteredCategories =
     typeFilter === "all"
@@ -144,6 +144,7 @@ export function CategoriesPage() {
           <TabsTrigger value="all">Все</TabsTrigger>
           <TabsTrigger value="income">Доходы</TabsTrigger>
           <TabsTrigger value="expense">Расходы</TabsTrigger>
+          <TabsTrigger value="both">Доход и расход</TabsTrigger>
         </TabsList>
       </Tabs>
 

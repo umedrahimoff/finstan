@@ -31,7 +31,10 @@ export function DashboardPage() {
   const [month, setMonth] = useState(currentMonth)
 
   const recurringCategoryIds = useMemo(
-    () => categories.filter((c) => c.recurring && c.type === "income").map((c) => c.id),
+    () =>
+      categories
+        .filter((c) => c.recurring && (c.type === "income" || c.type === "both"))
+        .map((c) => c.id),
     [categories]
   )
 

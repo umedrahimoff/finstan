@@ -41,7 +41,7 @@ export function BudgetForm({
   onCancel,
 }: BudgetFormProps) {
   const expenseCategories = useCategoriesStore((s) =>
-    s.categories.filter((c) => c.type === "expense")
+    s.categories.filter((c) => c.type === "expense" || c.type === "both")
   )
 
   const form = useForm<BudgetFormValues>({

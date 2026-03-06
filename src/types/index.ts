@@ -26,10 +26,12 @@ export interface Account {
   isPrimary?: boolean
 }
 
+export type CategoryType = "income" | "expense" | "both"
+
 export interface Category {
   id: string
   name: string
-  type: "income" | "expense"
+  type: CategoryType
   parentId?: string
   /** Учитывать в MRR (для подписок) */
   recurring?: boolean
@@ -39,6 +41,16 @@ export interface Counterparty {
   id: string
   name: string
   type: string
+  /** ИНН (необязательно) */
+  inn?: string
+  /** Страна */
+  country?: string
+  /** Контактное лицо: ФИО */
+  contactName?: string
+  /** Контактное лицо: телефон */
+  contactPhone?: string
+  /** Контактное лицо: email */
+  contactEmail?: string
 }
 
 export type PlannedPaymentType = "income" | "expense"

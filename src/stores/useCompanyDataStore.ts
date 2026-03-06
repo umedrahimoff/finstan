@@ -45,6 +45,10 @@ function getCachedDefault(companyId: string): CompanyData {
   return defaultDataCache[companyId]
 }
 
+function norm(s: string) {
+  return s.trim().toLowerCase()
+}
+
 interface CompanyDataState {
   byCompany: ByCompany
   getAccounts: (companyId: string) => Account[]
@@ -149,8 +153,10 @@ export const useCompanyDataStore = create<CompanyDataState>()(
 
       addAccount: (acc) => {
         const companyId = getCompanyId()
-        const id = generateId("acc")
         const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+        const exists = data.accounts.some((a) => norm(a.name) === norm(acc.name))
+        if (exists) throw new Error("Счёт с таким названием уже существует")
+        const id = generateId("acc")
         const isFirst = data.accounts.length === 0
         const newAcc = { ...acc, id, balance: 0, isPrimary: isFirst }
         set((state) => {
@@ -167,7 +173,16 @@ export const useCompanyDataStore = create<CompanyDataState>()(
         })
         return newAcc
       },
-      updateAccount: (id, acc) =>
+      updateAccount: (id, acc) => {
+        const accName = acc.name
+        if (accName !== undefined) {
+          const companyId = getCompanyId()
+          const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+          const exists = data.accounts.some(
+            (a) => a.id !== id && norm(a.name) === norm(accName)
+          )
+          if (exists) throw new Error("Счёт с таким названием уже существует")
+        }
         set((state) => {
           const companyId = getCompanyId()
           const data = getOrInitCompany(state, companyId)
@@ -182,7 +197,8 @@ export const useCompanyDataStore = create<CompanyDataState>()(
               },
             },
           }
-        }),
+        })
+      },
       setPrimaryAccount: (id) =>
         set((state) => {
           const companyId = getCompanyId()
@@ -217,6 +233,13 @@ export const useCompanyDataStore = create<CompanyDataState>()(
 
       addCategory: (cat) => {
         const companyId = getCompanyId()
+        const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+        const exists = data.categories.some(
+          (c) =>
+            norm(c.name) === norm(cat.name) &&
+            (c.type === "both" || cat.type === "both" || c.type === cat.type)
+        )
+        if (exists) throw new Error("Категория с таким именем уже существует")
         const id = generateId("cat")
         const newCat = { ...cat, id }
         set((state) => {
@@ -233,7 +256,21 @@ export const useCompanyDataStore = create<CompanyDataState>()(
         })
         return newCat
       },
-      updateCategory: (id, cat) =>
+      updateCategory: (id, cat) => {
+        if (cat.name !== undefined || cat.type !== undefined) {
+          const companyId = getCompanyId()
+          const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+          const current = data.categories.find((c) => c.id === id)
+          const name = (cat.name ?? current?.name ?? "").trim()
+          const type = cat.type ?? current?.type ?? "expense"
+          const exists = data.categories.some(
+            (c) =>
+              c.id !== id &&
+              norm(c.name) === norm(name) &&
+              (c.type === "both" || type === "both" || c.type === type)
+          )
+          if (exists) throw new Error("Категория с таким именем уже существует")
+        }
         set((state) => {
           const companyId = getCompanyId()
           const data = getOrInitCompany(state, companyId)
@@ -248,7 +285,8 @@ export const useCompanyDataStore = create<CompanyDataState>()(
               },
             },
           }
-        }),
+        })
+      },
       deleteCategory: (id) =>
         set((state) => {
           const companyId = getCompanyId()
@@ -266,6 +304,9 @@ export const useCompanyDataStore = create<CompanyDataState>()(
 
       addCounterparty: (cp) => {
         const companyId = getCompanyId()
+        const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+        const exists = data.counterparties.some((c) => norm(c.name) === norm(cp.name))
+        if (exists) throw new Error("Контрагент с таким именем уже существует")
         const id = generateId("cp")
         const newCp = { ...cp, id }
         set((state) => {
@@ -282,7 +323,16 @@ export const useCompanyDataStore = create<CompanyDataState>()(
         })
         return newCp
       },
-      updateCounterparty: (id, cp) =>
+      updateCounterparty: (id, cp) => {
+        const cpName = cp.name
+        if (cpName !== undefined) {
+          const companyId = getCompanyId()
+          const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+          const exists = data.counterparties.some(
+            (c) => c.id !== id && norm(c.name) === norm(cpName)
+          )
+          if (exists) throw new Error("Контрагент с таким именем уже существует")
+        }
         set((state) => {
           const companyId = getCompanyId()
           const data = getOrInitCompany(state, companyId)
@@ -297,7 +347,8 @@ export const useCompanyDataStore = create<CompanyDataState>()(
               },
             },
           }
-        }),
+        })
+      },
       deleteCounterparty: (id) =>
         set((state) => {
           const companyId = getCompanyId()
@@ -487,6 +538,9 @@ export const useCompanyDataStore = create<CompanyDataState>()(
 
       addProject: (p) => {
         const companyId = getCompanyId()
+        const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+        const exists = data.projects.some((x) => norm(x.name) === norm(p.name))
+        if (exists) throw new Error("Проект с таким именем уже существует")
         const id = generateId("prj")
         const newProject = { ...p, id }
         set((state) => {
@@ -503,7 +557,16 @@ export const useCompanyDataStore = create<CompanyDataState>()(
         })
         return newProject
       },
-      updateProject: (id, p) =>
+      updateProject: (id, p) => {
+        const pName = p.name
+        if (pName !== undefined) {
+          const companyId = getCompanyId()
+          const data = get().byCompany[companyId] ?? getInitialCompanyData(companyId)
+          const exists = data.projects.some(
+            (x) => x.id !== id && norm(x.name) === norm(pName)
+          )
+          if (exists) throw new Error("Проект с таким именем уже существует")
+        }
         set((state) => {
           const companyId = getCompanyId()
           const data = getOrInitCompany(state, companyId)
@@ -516,7 +579,8 @@ export const useCompanyDataStore = create<CompanyDataState>()(
               },
             },
           }
-        }),
+        })
+      },
       deleteProject: (id) =>
         set((state) => {
           const companyId = getCompanyId()

@@ -42,9 +42,17 @@ export function AccountForm({
     },
   })
 
+  const handleSubmit = (values: AccountFormValues) => {
+    try {
+      onSubmit(values)
+    } catch (e) {
+      if (e instanceof Error) form.setError("name", { message: e.message })
+    }
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"

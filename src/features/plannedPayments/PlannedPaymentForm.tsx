@@ -72,7 +72,7 @@ export function PlannedPaymentForm({
 
   const type = form.watch("type")
   const recurrence = form.watch("recurrence")
-  const categoryItems = categories.filter((c) => c.type === type)
+  const categoryItems = categories.filter((c) => c.type === type || c.type === "both")
 
   return (
     <Form {...form}>
@@ -206,7 +206,16 @@ export function PlannedPaymentForm({
                   value={field.value ?? ""}
                   onChange={field.onChange}
                   items={categoryItems}
-                  onCreate={(name) => addCategory({ name, type }).id}
+                  onCreate={(name) => {
+                    try {
+                      return addCategory({ name, type: "both" }).id
+                    } catch {
+                      const existing = categoryItems.find(
+                        (c) => c.name.toLowerCase().trim() === name.toLowerCase().trim()
+                      )
+                      return existing?.id ?? ""
+                    }
+                  }}
                   placeholder="Поиск или создание категории..."
                   createLabel="Создать категорию"
                 />
@@ -226,7 +235,16 @@ export function PlannedPaymentForm({
                   value={field.value ?? ""}
                   onChange={field.onChange}
                   items={counterparties}
-                  onCreate={(name) => addCounterparty({ name, type: "client" }).id}
+                  onCreate={(name) => {
+                    try {
+                      return addCounterparty({ name, type: "client" }).id
+                    } catch {
+                      const existing = counterparties.find(
+                        (c) => c.name.toLowerCase().trim() === name.toLowerCase().trim()
+                      )
+                      return existing?.id ?? ""
+                    }
+                  }}
                   placeholder="Поиск или создание контрагента..."
                   createLabel="Создать контрагента"
                 />

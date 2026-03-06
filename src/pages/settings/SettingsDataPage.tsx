@@ -168,9 +168,16 @@ export function SettingsDataPage() {
       if (!key) return undefined
       let id = nameToCpId.get(key)
       if (!id) {
-        const cp = addCounterparty({ name: sanitize ? key : name.trim(), type: "client" })
-        nameToCpId.set(key, cp.id)
-        id = cp.id
+        try {
+          const cp = addCounterparty({ name: sanitize ? key : name.trim(), type: "client" })
+          id = cp.id
+        } catch {
+          const existing = counterparties.find(
+            (c) => c.name.toLowerCase().trim() === (sanitize ? key : name.trim()).toLowerCase()
+          )
+          id = existing?.id
+        }
+        if (id) nameToCpId.set(key, id)
       }
       return id
     }

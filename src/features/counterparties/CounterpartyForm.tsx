@@ -36,12 +36,25 @@ export function CounterpartyForm({
     defaultValues: {
       name: defaultValues?.name ?? "",
       type: defaultValues?.type ?? "client",
+      inn: defaultValues?.inn ?? "",
+      country: defaultValues?.country ?? "",
+      contactName: defaultValues?.contactName ?? "",
+      contactPhone: defaultValues?.contactPhone ?? "",
+      contactEmail: defaultValues?.contactEmail ?? "",
     },
   })
 
+  const handleSubmit = (values: CounterpartyFormValues) => {
+    try {
+      onSubmit(values)
+    } catch (e) {
+      if (e instanceof Error) form.setError("name", { message: e.message })
+    }
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -79,6 +92,74 @@ export function CounterpartyForm({
                   ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="inn"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>ИНН</FormLabel>
+              <FormControl>
+                <Input placeholder="Необязательно" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="country"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Страна</FormLabel>
+              <FormControl>
+                <Input placeholder="Узбекистан" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <p className="text-sm font-medium text-muted-foreground">Контактное лицо</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="contactName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>ФИО</FormLabel>
+                <FormControl>
+                  <Input placeholder="Иванов Иван Иванович" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="contactPhone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Телефон</FormLabel>
+                <FormControl>
+                  <Input placeholder="+998 90 123 45 67" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="contactEmail"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="contact@company.uz" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

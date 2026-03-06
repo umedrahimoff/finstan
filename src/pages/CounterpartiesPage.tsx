@@ -49,6 +49,11 @@ export function CounterpartiesPage() {
     id: string
     name: string
     type: string
+    inn?: string
+    country?: string
+    contactName?: string
+    contactPhone?: string
+    contactEmail?: string
   } | null>(null)
   const [deletingCounterparty, setDeletingCounterparty] = useState<{
     id: string
@@ -78,10 +83,18 @@ export function CounterpartiesPage() {
   }
 
   const handleSubmit = (values: CounterpartyFormValues) => {
+    const cleaned = {
+      ...values,
+      inn: values.inn?.trim() || undefined,
+      country: values.country?.trim() || undefined,
+      contactName: values.contactName?.trim() || undefined,
+      contactPhone: values.contactPhone?.trim() || undefined,
+      contactEmail: values.contactEmail?.trim() || undefined,
+    }
     if (editingCounterparty) {
-      updateCounterparty(editingCounterparty.id, values)
+      updateCounterparty(editingCounterparty.id, cleaned)
     } else {
-      addCounterparty(values)
+      addCounterparty(cleaned)
     }
     setEditingCounterparty(null)
     setDialogOpen(false)
@@ -181,6 +194,9 @@ export function CounterpartiesPage() {
               </TableHead>
               <TableHead>Название</TableHead>
               <TableHead>Тип</TableHead>
+              <TableHead>ИНН</TableHead>
+              <TableHead>Страна</TableHead>
+              <TableHead>Контакт</TableHead>
               <TableHead className="text-right">Сумма по операциям</TableHead>
               <TableHead className="w-[50px]" />
             </TableRow>
@@ -189,7 +205,7 @@ export function CounterpartiesPage() {
             {filteredCounterparties.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={8}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Контрагентов пока нет. Добавьте первого контрагента.
@@ -223,6 +239,17 @@ export function CounterpartiesPage() {
                     </TableCell>
                     <TableCell>
                       {getCounterpartyTypeLabel(cp.type)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {cp.inn ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {cp.country ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm max-w-[180px] truncate">
+                      {[cp.contactName, cp.contactPhone, cp.contactEmail]
+                        .filter(Boolean)
+                        .join(" • ") || "—"}
                     </TableCell>
                     <TableCell
                       className={`text-right font-medium ${
@@ -278,6 +305,11 @@ export function CounterpartiesPage() {
             ? {
                 name: editingCounterparty.name,
                 type: editingCounterparty.type as CounterpartyFormValues["type"],
+                inn: editingCounterparty.inn ?? "",
+                country: editingCounterparty.country ?? "",
+                contactName: editingCounterparty.contactName ?? "",
+                contactPhone: editingCounterparty.contactPhone ?? "",
+                contactEmail: editingCounterparty.contactEmail ?? "",
               }
             : undefined
         }

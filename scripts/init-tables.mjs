@@ -41,9 +41,19 @@ await sql`
     user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     company_id TEXT NOT NULL DEFAULT 'default',
     name TEXT NOT NULL,
-    type TEXT NOT NULL
+    type TEXT NOT NULL,
+    inn TEXT,
+    country TEXT,
+    contact_name TEXT,
+    contact_phone TEXT,
+    contact_email TEXT
   )
 `
+await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS inn TEXT`
+await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS country TEXT`
+await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS contact_name TEXT`
+await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS contact_phone TEXT`
+await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS contact_email TEXT`
 await sql`CREATE INDEX IF NOT EXISTS idx_counterparties_user ON counterparties(user_id)`
 
 await sql`

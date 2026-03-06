@@ -41,7 +41,16 @@ function rowToCategory(r: Record<string, unknown>) {
 }
 
 function rowToCounterparty(r: Record<string, unknown>) {
-  return { id: r.id, name: r.name, type: r.type }
+  return {
+    id: r.id,
+    name: r.name,
+    type: r.type,
+    inn: r.inn ?? undefined,
+    country: r.country ?? undefined,
+    contactName: r.contact_name ?? undefined,
+    contactPhone: r.contact_phone ?? undefined,
+    contactEmail: r.contact_email ?? undefined,
+  }
 }
 
 function rowToProject(r: Record<string, unknown>) {
@@ -171,8 +180,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         for (const cp of data.counterparties as Record<string, unknown>[]) {
           await sql`
-            INSERT INTO counterparties (id, user_id, company_id, name, type)
-            VALUES (${cp.id}, ${auth.uid}, ${companyId}, ${cp.name}, ${cp.type})
+            INSERT INTO counterparties (id, user_id, company_id, name, type, inn, country, contact_name, contact_phone, contact_email)
+            VALUES (${cp.id}, ${auth.uid}, ${companyId}, ${cp.name}, ${cp.type}, ${cp.inn ?? null}, ${cp.country ?? null}, ${cp.contactName ?? null}, ${cp.contactPhone ?? null}, ${cp.contactEmail ?? null})
           `
         }
         for (const p of data.projects as Record<string, unknown>[]) {

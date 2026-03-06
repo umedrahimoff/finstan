@@ -22,8 +22,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await sql`CREATE INDEX IF NOT EXISTS idx_accounts_user ON accounts(user_id)`
     await sql`CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE, company_id TEXT NOT NULL DEFAULT 'default', name TEXT NOT NULL, type TEXT NOT NULL, parent_id TEXT, recurring BOOLEAN DEFAULT false)`
     await sql`CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id)`
-    await sql`CREATE TABLE IF NOT EXISTS counterparties (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE, company_id TEXT NOT NULL DEFAULT 'default', name TEXT NOT NULL, type TEXT NOT NULL)`
+    await sql`CREATE TABLE IF NOT EXISTS counterparties (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE, company_id TEXT NOT NULL DEFAULT 'default', name TEXT NOT NULL, type TEXT NOT NULL, inn TEXT, country TEXT, contact_name TEXT, contact_phone TEXT, contact_email TEXT)`
     await sql`CREATE INDEX IF NOT EXISTS idx_counterparties_user ON counterparties(user_id)`
+    await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS inn TEXT`
+    await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS country TEXT`
+    await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS contact_name TEXT`
+    await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS contact_phone TEXT`
+    await sql`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS contact_email TEXT`
     await sql`CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE, company_id TEXT NOT NULL DEFAULT 'default', name TEXT NOT NULL)`
     await sql`CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_id)`
     await sql`CREATE TABLE IF NOT EXISTS transactions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id) ON DELETE CASCADE, company_id TEXT NOT NULL DEFAULT 'default', date TEXT NOT NULL, amount NUMERIC NOT NULL, currency TEXT NOT NULL, type TEXT NOT NULL, account_id TEXT NOT NULL, to_account_id TEXT, category_id TEXT, counterparty_id TEXT, project_id TEXT, comment TEXT, planned_payment_id TEXT)`

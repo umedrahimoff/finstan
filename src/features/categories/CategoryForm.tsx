@@ -23,6 +23,7 @@ import { categoryFormSchema } from "./categoryFormSchema"
 const CATEGORY_TYPES = [
   { value: "income", label: "Доход" },
   { value: "expense", label: "Расход" },
+  { value: "both", label: "Доход и расход" },
 ] as const
 
 interface CategoryFormProps {
@@ -45,9 +46,17 @@ export function CategoryForm({
     },
   })
 
+  const handleSubmit = (values: CategoryFormValues) => {
+    try {
+      onSubmit(values)
+    } catch (e) {
+      if (e instanceof Error) form.setError("name", { message: e.message })
+    }
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -89,7 +98,7 @@ export function CategoryForm({
             </FormItem>
           )}
         />
-        {form.watch("type") === "income" && (
+        {(form.watch("type") === "income" || form.watch("type") === "both") && (
           <FormField
             control={form.control}
             name="recurring"
