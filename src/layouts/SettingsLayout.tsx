@@ -3,11 +3,11 @@ import { User, Users, Palette, Database, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const subSections = [
-  { to: "/settings/profile", icon: User, label: "Профиль" },
-  { to: "/settings/users", icon: Users, label: "Пользователи" },
-  { to: "/settings/general", icon: Palette, label: "Общие" },
-  { to: "/settings/data", icon: Database, label: "Данные" },
-  { to: "/settings/about", icon: Info, label: "О приложении" },
+  { to: "/app/settings/profile", icon: User, label: "Профиль" },
+  { to: "/app/settings/users", icon: Users, label: "Пользователи" },
+  { to: "/app/settings/general", icon: Palette, label: "Общие" },
+  { to: "/app/settings/data", icon: Database, label: "Данные" },
+  { to: "/app/settings/about", icon: Info, label: "О приложении" },
 ]
 
 export function SettingsLayout() {

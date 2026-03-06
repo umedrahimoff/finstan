@@ -145,7 +145,7 @@ export function AppLayout() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <Link to="/settings">Настройки</Link>
+                  <Link to="/app/settings">Настройки</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 size-4" />

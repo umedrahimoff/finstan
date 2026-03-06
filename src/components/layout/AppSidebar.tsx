@@ -66,16 +66,16 @@ import { useCompanyStore } from "@/stores/useCompanyStore"
 import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Главная" },
-  { to: "/transactions", icon: Repeat, label: "Операции" },
-  { to: "/accounts", icon: Wallet, label: "Счета" },
-  { to: "/categories", icon: FolderTree, label: "Категории" },
-  { to: "/counterparties", icon: Users, label: "Контрагенты" },
-  { to: "/calendar", icon: Calendar, label: "Платежный календарь" },
-  { to: "/budgets", icon: PiggyBank, label: "Бюджеты" },
-  { to: "/reports", icon: FileText, label: "Отчеты" },
-  { to: "/analytics", icon: BarChart3, label: "Аналитика" },
-  { to: "/projects", icon: FolderKanban, label: "Проекты" },
+  { to: "/app", icon: LayoutDashboard, label: "Главная" },
+  { to: "/app/transactions", icon: Repeat, label: "Операции" },
+  { to: "/app/accounts", icon: Wallet, label: "Счета" },
+  { to: "/app/categories", icon: FolderTree, label: "Категории" },
+  { to: "/app/counterparties", icon: Users, label: "Контрагенты" },
+  { to: "/app/calendar", icon: Calendar, label: "Платежный календарь" },
+  { to: "/app/budgets", icon: PiggyBank, label: "Бюджеты" },
+  { to: "/app/reports", icon: FileText, label: "Отчеты" },
+  { to: "/app/analytics", icon: BarChart3, label: "Аналитика" },
+  { to: "/app/projects", icon: FolderKanban, label: "Проекты" },
 ]
 
 export function AppSidebar() {
@@ -341,8 +341,8 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location.pathname.startsWith("/settings")} tooltip="Настройки">
-                  <Link to="/settings">
+                <SidebarMenuButton asChild isActive={location.pathname.startsWith("/app/settings")} tooltip="Настройки">
+                  <Link to="/app/settings">
                     <Settings className="size-4" />
                     <span>Настройки</span>
                   </Link>

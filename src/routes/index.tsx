@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AppLayout } from "@/layouts/AppLayout"
+import { LandingPage } from "@/pages/LandingPage"
 import { LoginPage } from "@/pages/LoginPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { TransactionsPage } from "@/pages/TransactionsPage"
@@ -20,9 +21,10 @@ import { SettingsDataPage } from "@/pages/settings/SettingsDataPage"
 import { SettingsAboutPage } from "@/pages/settings/SettingsAboutPage"
 
 export const router = createBrowserRouter([
+  { path: "/", element: <LandingPage /> },
   { path: "/login", element: <LoginPage /> },
   {
-    path: "/",
+    path: "/app",
     element: (
       <ProtectedRoute>
         <AppLayout />
@@ -43,7 +45,7 @@ export const router = createBrowserRouter([
         path: "settings",
         element: <SettingsPage />,
         children: [
-          { index: true, element: <Navigate to="/settings/profile" replace /> },
+          { index: true, element: <Navigate to="/app/settings/profile" replace /> },
           { path: "profile", element: <SettingsProfilePage /> },
           { path: "users", element: <SettingsUsersPage /> },
           { path: "general", element: <SettingsGeneralPage /> },
@@ -53,5 +55,5 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  { path: "*", element: <Navigate to="/" replace /> },
+  { path: "*", element: <Navigate to="/app" replace /> },
 ])

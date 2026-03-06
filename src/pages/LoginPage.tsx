@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const from = (useLocation().state as { from?: { pathname: string } })?.from?.pathname ?? "/"
+  const from = (useLocation().state as { from?: { pathname: string } })?.from?.pathname ?? "/app"
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
