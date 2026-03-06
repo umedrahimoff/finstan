@@ -21,6 +21,7 @@ import { SettingsUsersPage } from "@/pages/settings/SettingsUsersPage"
 import { SettingsGeneralPage } from "@/pages/settings/SettingsGeneralPage"
 import { SettingsDataPage } from "@/pages/settings/SettingsDataPage"
 import { SettingsAboutPage } from "@/pages/settings/SettingsAboutPage"
+import { SettingsTelegramPage } from "@/pages/settings/SettingsTelegramPage"
 import { ManagementPage } from "@/pages/ManagementPage"
 
 export const router = createBrowserRouter([
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/app/settings/profile" replace /> },
           { path: "profile", element: <SettingsProfilePage /> },
           { path: "users", element: <SettingsUsersPage /> },
+          { path: "telegram", element: <SettingsTelegramPage /> },
           { path: "general", element: <SettingsGeneralPage /> },
           { path: "data", element: <SettingsDataPage /> },
           { path: "about", element: <SettingsAboutPage /> },

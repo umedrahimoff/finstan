@@ -14,6 +14,8 @@
     "migrate": "node --env-file=.env scripts/migrate-frozen.mjs",
     "migrate:user-companies": "node --env-file=.env scripts/migrate-user-companies.mjs",
     "migrate:tenants": "node --env-file=.env scripts/migrate-tenants.mjs",
+    "migrate:telegram": "node --env-file=.env scripts/migrate-telegram.mjs",
+    "telegram:webhook": "node --env-file=.env scripts/set-telegram-webhook.mjs",
     "make-global-admin": "node --env-file=.env scripts/make-global-admin.mjs",
     "migrate:user-to-moderator": "node --env-file=.env scripts/migrate-user-to-moderator.mjs",
     "seed:test": "node --env-file=.env scripts/seed-test-data.mjs",

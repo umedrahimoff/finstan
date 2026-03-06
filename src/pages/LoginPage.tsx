@@ -74,6 +74,11 @@ export function LoginPage() {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "..." : "Войти"}
         </Button>
+        <p className="text-center text-xs text-muted-foreground">
+          <Link to="/terms" className="hover:text-foreground">Условия использования</Link>
+          {" · "}
+          <Link to="/privacy" className="hover:text-foreground">Политика конфиденциальности</Link>
+        </p>
       </form>
     </div>
   )

@@ -29,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "GET") {
     try {
       const rows = await sql`
-        SELECT u.id, u.username, u.role, u.tenant_id, t.created_at
+        SELECT u.id, u.username, u.role, u.tenant_id, u.frozen, t.created_at
         FROM app_users u
         JOIN tenants t ON u.tenant_id = t.id
         WHERE u.tenant_id IS NOT NULL
