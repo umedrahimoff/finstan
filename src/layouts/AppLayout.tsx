@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, Outlet, useNavigate } from "react-router-dom"
 import { ArrowDownLeft, ArrowUpRight, LogOut, Settings } from "lucide-react"
 import { clearToken } from "@/api/client"
@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/providers/AuthProvider"
+import { useProfileStore } from "@/stores/useProfileStore"
 import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { useAccountsStore } from "@/stores/useAccountsStore"
 import { TransactionFormDialog } from "@/features/transactions/TransactionFormDialog"
@@ -25,10 +26,24 @@ import type { TransactionFormValues } from "@/features/transactions/transactionF
 import { calculateAccountBalance } from "@/lib/accountBalance"
 import { formatAmount, formatCompact } from "@/lib/currency"
 
+function useDisplayName() {
+  const { user } = useAuth()
+  const profile = useProfileStore((s) => s.profile)
+  if (!user) return "Пользователь"
+  const full = [profile.firstName, profile.lastName].filter(Boolean).join(" ")
+  return full || user.username
+}
+
 export function AppLayout() {
   const { user } = useAuth()
+  const displayName = useDisplayName()
   const navigate = useNavigate()
+  const loadProfile = useProfileStore((s) => s.load)
   const [quickAddType, setQuickAddType] = useState<"income" | "expense" | null>(null)
+
+  useEffect(() => {
+    if (user?.uid) loadProfile(user.uid)
+  }, [user?.uid, loadProfile])
 
   const handleLogout = () => {
     clearToken()
@@ -124,7 +139,7 @@ export function AppLayout() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="ml-auto">
-                  {user?.username ?? "Пользователь"}
+                  {displayName}
                   <Settings className="ml-2 size-4" />
                 </Button>
               </DropdownMenuTrigger>
