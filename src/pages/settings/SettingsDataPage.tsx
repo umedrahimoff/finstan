@@ -248,7 +248,7 @@ export function SettingsDataPage() {
     setDemoError("")
     setLoadingDemo(true)
     try {
-      await apiFetch("/seed-demo", { method: "POST" })
+      await apiFetch("/data", { method: "PUT", body: JSON.stringify({ action: "seed-demo" }) })
       const res = await apiFetch<{ byCompany?: Record<string, unknown>; companies?: { id: string; name: string; archived?: boolean }[] }>("/data")
       if (res?.companies?.length) {
         useCompanyStore.getState().setCompaniesFromServer(res.companies)
