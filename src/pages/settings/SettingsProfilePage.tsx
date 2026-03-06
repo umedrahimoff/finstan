@@ -15,14 +15,12 @@ export function SettingsProfilePage() {
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    if (user?.uid) {
-      load(user.uid)
-    }
-  }, [user?.uid, load])
+    if (user?.uid) load(user.uid)
+  }, [user?.uid])
 
   useEffect(() => {
-    setLocal(profile)
-  }, [profile])
+    setLocal({ ...profile })
+  }, [profile.firstName, profile.lastName, profile.email, profile.phone])
 
   const handleChange = (field: keyof UserProfile, value: string) => {
     setLocal((p) => ({ ...p, [field]: value }))

@@ -43,7 +43,7 @@ export function AppLayout() {
 
   useEffect(() => {
     if (user?.uid) loadProfile(user.uid)
-  }, [user?.uid, loadProfile])
+  }, [user?.uid])
 
   const handleLogout = () => {
     clearToken()
