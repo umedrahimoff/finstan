@@ -26,8 +26,11 @@ export function DataSyncProvider({ children }: { children: React.ReactNode }) {
       .then((res) => {
         if (res?.byCompany && Object.keys(res.byCompany).length > 0) {
           useCompanyDataStore.getState().setByCompanyFromServer(res.byCompany as never)
-          if (res.byCompany.demo) {
-            useCompanyStore.getState().ensureCompany("demo", "Демо")
+          const demoData = res.byCompany.demo as { transactions?: unknown[] } | undefined
+          if (demoData && (demoData.transactions?.length ?? 0) > 0) {
+            const store = useCompanyStore.getState()
+            store.ensureCompany("demo", "Демо")
+            store.setCurrentCompany("demo")
           }
         } else {
           const current = useCompanyDataStore.getState().byCompany
