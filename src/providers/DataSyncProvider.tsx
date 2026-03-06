@@ -15,7 +15,6 @@ function syncToServer(byCompany: Record<string, unknown>) {
 
 export function DataSyncProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
-  const setByCompanyFromServer = useCompanyDataStore((s) => s.setByCompanyFromServer)
   const loadedForUser = useRef<string | null>(null)
 
   useEffect(() => {
@@ -25,7 +24,7 @@ export function DataSyncProvider({ children }: { children: React.ReactNode }) {
     apiFetch<{ byCompany?: Record<string, unknown> }>("/data")
       .then((res) => {
         if (res?.byCompany && Object.keys(res.byCompany).length > 0) {
-          setByCompanyFromServer(res.byCompany as Parameters<typeof setByCompanyFromServer>[0])
+          useCompanyDataStore.getState().setByCompanyFromServer(res.byCompany as never)
         } else {
           const current = useCompanyDataStore.getState().byCompany
           if (Object.keys(current).length > 0) {
@@ -34,19 +33,21 @@ export function DataSyncProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {})
-      .finally(() => {})
-  }, [user?.uid, setByCompanyFromServer])
+  }, [user?.uid])
 
   useEffect(() => {
     if (!user?.uid) return
+    let mounted = true
     const unsub = useCompanyDataStore.subscribe((state) => {
+      if (!mounted) return
       if (syncTimeout) clearTimeout(syncTimeout)
       syncTimeout = setTimeout(() => {
         syncTimeout = null
-        syncToServer(state.byCompany)
+        if (mounted) syncToServer(state.byCompany)
       }, DEBOUNCE_MS)
     })
     return () => {
+      mounted = false
       unsub()
       if (syncTimeout) clearTimeout(syncTimeout)
     }
