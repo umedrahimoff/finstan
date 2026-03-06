@@ -251,7 +251,7 @@ export function SettingsUsersPage() {
                           )}
                         </TableCell>
                         <TableCell className="w-[50px]">
-                          {canManage && (u.role !== "admin" || user?.role === "admin") && u.id !== user?.uid ? (
+                          {canManage && u.id !== user?.uid ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="size-8">
