@@ -166,9 +166,8 @@ export function SettingsUsersPage() {
   const handleDelete = async () => {
     if (!deleteUser) return
     try {
-      await apiFetch(`/users?id=${encodeURIComponent(deleteUser.id)}`, {
+      await apiFetch(`/users/${encodeURIComponent(deleteUser.id)}`, {
         method: "DELETE",
-        body: JSON.stringify({ id: deleteUser.id }),
       })
       setDeleteUser(null)
       loadUsers()

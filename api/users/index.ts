@@ -9,24 +9,35 @@ async function getAuth(req: VercelRequest) {
   return payload
 }
 
+async function getAuthWithRole(req: VercelRequest, sql: { (strings: TemplateStringsArray, ...v: unknown[]): Promise<unknown[]> }) {
+  const auth = await getAuth(req)
+  if (!auth) return null
+  const rows = await sql`SELECT role FROM app_users WHERE id = ${auth.uid} AND frozen = false LIMIT 1`
+  const row = rows[0] as { role: string } | undefined
+  return row ? { ...auth, role: row.role ?? "user" } : null
+}
+
 function canManage(auth: { role?: string }) {
   const r = auth.role ?? "user"
   return r === "admin" || r === "moderator"
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const auth = await getAuth(req)
-  if (!auth) return res.status(401).json({ error: "Войдите в систему" })
-
   const url = process.env.DATABASE_URL
   const secret = process.env.JWT_SECRET
   if (!url) return res.status(500).json({ error: "DATABASE_URL not set" })
   if (!secret) return res.status(500).json({ error: "JWT_SECRET not set" })
 
+  const { neon } = await import("@neondatabase/serverless")
+  const sql = neon(url)
+
+  const auth = req.method === "GET"
+    ? await getAuth(req)
+    : await getAuthWithRole(req, sql as { (strings: TemplateStringsArray, ...v: unknown[]): Promise<unknown[]> })
+  if (!auth) return res.status(401).json({ error: "Войдите в систему" })
+
   if (req.method === "GET") {
     try {
-      const { neon } = await import("@neondatabase/serverless")
-      const sql = neon(url)
       const rows = await sql`SELECT id, username, role, frozen FROM app_users ORDER BY username`
       return res.status(200).json(rows)
     } catch (err) {
@@ -52,8 +63,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ error: "Только админ может создавать админов" })
       }
       const bcrypt = (await import("bcryptjs")).default
-      const { neon } = await import("@neondatabase/serverless")
-      const sql = neon(url)
       const existing = await sql`SELECT id FROM app_users WHERE username = ${u} LIMIT 1`
       if (existing.length > 0) return res.status(400).json({ error: "Логин уже занят" })
       const hash = await bcrypt.hash(p, 10)
@@ -77,8 +86,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         frozen?: boolean
       }
       if (!id) return res.status(400).json({ error: "Укажите id пользователя" })
-      const { neon } = await import("@neondatabase/serverless")
-      const sql = neon(url)
       const existing = await sql`SELECT id, role FROM app_users WHERE id = ${id} LIMIT 1`
       const target = existing[0] as { id: string; role: string } | undefined
       if (!target) return res.status(404).json({ error: "Пользователь не найден" })
@@ -118,27 +125,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(rows[0])
     } catch (err) {
       console.error("User update:", err)
-      return res.status(500).json({ error: String((err as Error).message) })
-    }
-  }
-
-  if (req.method === "DELETE") {
-    if (!canManage(auth)) return res.status(403).json({ error: "Нет прав" })
-    try {
-      const body = typeof req.body === "object" && req.body !== null ? req.body as Record<string, unknown> : {}
-      const id = (req.query as { id?: string }).id ?? (typeof body.id === "string" ? body.id : undefined)
-      if (!id) return res.status(400).json({ error: "Укажите id пользователя" })
-      if (id === auth.uid) return res.status(400).json({ error: "Нельзя удалить себя" })
-      const { neon } = await import("@neondatabase/serverless")
-      const sql = neon(url)
-      const target = await sql`SELECT role FROM app_users WHERE id = ${id} LIMIT 1`
-      const t = target[0] as { role: string } | undefined
-      if (!t) return res.status(404).json({ error: "Пользователь не найден" })
-      if (t.role === "admin" && auth.role !== "admin") return res.status(403).json({ error: "Только админ может удалить админа" })
-      await sql`DELETE FROM app_users WHERE id = ${id}`
-      return res.status(200).json({ ok: true })
-    } catch (err) {
-      console.error("User delete:", err)
       return res.status(500).json({ error: String((err as Error).message) })
     }
   }
