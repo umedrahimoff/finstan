@@ -49,6 +49,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!u || u.length < 2) return res.status(400).json({ error: "Логин минимум 2 символа" })
     if (!p || p.length < 4) return res.status(400).json({ error: "Пароль минимум 4 символа" })
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS tenants (
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `
+    await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS tenant_id TEXT REFERENCES tenants(id) ON DELETE SET NULL`
+
     const existing = await sql`SELECT id FROM app_users WHERE username = ${u} LIMIT 1`
     if (existing.length > 0) return res.status(400).json({ error: "Логин уже занят" })
 

@@ -215,11 +215,17 @@ export function LandingPage() {
       <footer className="border-t py-12">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                F
+            <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-6">
+              <Link to="/" className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+                  F
+                </div>
+                <span className="font-semibold">Finstan</span>
+              </Link>
+              <div className="flex gap-4 text-sm text-muted-foreground">
+                <Link to="/terms" className="hover:text-foreground">Условия использования</Link>
+                <Link to="/privacy" className="hover:text-foreground">Политика конфиденциальности</Link>
               </div>
-              <span className="font-semibold">Finstan</span>
             </div>
             <Link to="/login">
               <Button variant="outline">Войти</Button>

@@ -239,7 +239,6 @@ export function AppSidebar() {
         </AlertDialogContent>
       </AlertDialog>
       <SidebarContent>
-        {!isGlobalAdmin && (
         <SidebarGroup>
           <SidebarGroupLabel>Компания</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -331,7 +330,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        )}
         <SidebarGroup>
           <SidebarGroupLabel>Навигация</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -357,6 +355,14 @@ export function AppSidebar() {
           <SidebarGroupLabel>Система</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.pathname.startsWith("/app/settings")} tooltip="Настройки">
+                  <Link to="/app/settings">
+                    <Settings className="size-4" />
+                    <span>Настройки</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               {isGlobalAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -371,14 +377,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location.pathname.startsWith("/app/settings")} tooltip="Настройки">
-                  <Link to="/app/settings">
-                    <Settings className="size-4" />
-                    <span>Настройки</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

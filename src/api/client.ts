@@ -26,11 +26,12 @@ export async function apiFetch<T>(path: string, options?: RequestInit & { token?
   try {
     data = text ? JSON.parse(text) : {}
   } catch {
-    if (!res.ok) throw new Error(`API error: ${res.status}`)
+    if (!res.ok) throw new Error(text || `API error: ${res.status}`)
     throw new Error("Ошибка соединения")
   }
   if (!res.ok) {
-    throw new Error((data as { error?: string }).error || `API error: ${res.status}`)
+    const errMsg = (data as { error?: string }).error
+    throw new Error(errMsg || text || `API error: ${res.status}`)
   }
   return data as T
 }

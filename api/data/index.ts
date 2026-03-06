@@ -104,9 +104,6 @@ function rowToPlannedPayment(r: Record<string, unknown>) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await getAuth(req)
   if (!auth) return res.status(401).json({ error: "Войдите в систему" })
-  if (auth.tenantId == null) {
-    return res.status(200).json({ byCompany: {}, companies: [] })
-  }
 
   const url = process.env.DATABASE_URL
   if (!url) return res.status(500).json({ error: "DATABASE_URL not set" })
@@ -116,15 +113,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sql = neon(url)
 
     if (req.method === "GET") {
-      // Get companies user can access: owned by user OR in user_companies, within same tenant
-      const companiesRows = await sql`
-        SELECT c.id, c.name, c.archived, c.owner_user_id
-        FROM companies c
-        JOIN app_users ou ON c.owner_user_id = ou.id
-        WHERE ou.tenant_id = ${auth.tenantId}
-          AND (c.owner_user_id = ${auth.uid}
-            OR c.id IN (SELECT company_id FROM user_companies WHERE user_id = ${auth.uid}))
-      `.catch(() => [] as { id: string; name: string; archived: boolean; owner_user_id: string }[])
+      let companiesRows: { id: string; name: string; archived: boolean; owner_user_id: string }[]
+      if (auth.tenantId == null) {
+        companiesRows = await sql`
+          SELECT c.id, c.name, c.archived, c.owner_user_id
+          FROM companies c
+          WHERE c.owner_user_id = ${auth.uid}
+        `.catch(() => [])
+      } else {
+        companiesRows = await sql`
+          SELECT c.id, c.name, c.archived, c.owner_user_id
+          FROM companies c
+          JOIN app_users ou ON c.owner_user_id = ou.id
+          WHERE ou.tenant_id = ${auth.tenantId}
+            AND (c.owner_user_id = ${auth.uid}
+              OR c.id IN (SELECT company_id FROM user_companies WHERE user_id = ${auth.uid}))
+        `.catch(() => [])
+      }
 
       const userCompanies = Array.isArray(companiesRows) ? companiesRows : []
       const companyIds = userCompanies.length > 0

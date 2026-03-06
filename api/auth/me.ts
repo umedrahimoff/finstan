@@ -20,13 +20,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const isGlobalAdmin = row.tenant_id == null
     if (isGlobalAdmin) {
+      const companiesRows = await sql`
+        SELECT c.id, c.name, c.archived
+        FROM companies c
+        WHERE c.owner_user_id = ${payload.uid}
+        ORDER BY c.name
+      `.catch(() => [] as { id: string; name: string; archived: boolean }[])
+      const companies = Array.isArray(companiesRows)
+        ? (companiesRows as { id: string; name: string; archived: boolean }[]).map((r) => ({
+            id: r.id,
+            name: r.name,
+            archived: r.archived === true,
+          }))
+        : []
       return res.status(200).json({
         uid: payload.uid,
         username: row.username,
         role: "admin",
         tenantId: null,
         isGlobalAdmin: true,
-        companies: [],
+        companies: companies.length > 0 ? companies : [{ id: "default", name: "Моя компания", archived: false }],
       })
     }
 

@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from "react-router-dom"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AppLayout } from "@/layouts/AppLayout"
 import { LandingPage } from "@/pages/LandingPage"
+import { TermsPage } from "@/pages/TermsPage"
+import { PrivacyPage } from "@/pages/PrivacyPage"
 import { LoginPage } from "@/pages/LoginPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { TransactionsPage } from "@/pages/TransactionsPage"
@@ -23,6 +25,8 @@ import { ManagementPage } from "@/pages/ManagementPage"
 
 export const router = createBrowserRouter([
   { path: "/", element: <LandingPage /> },
+  { path: "/terms", element: <TermsPage /> },
+  { path: "/privacy", element: <PrivacyPage /> },
   { path: "/login", element: <LoginPage /> },
   {
     path: "/app",
