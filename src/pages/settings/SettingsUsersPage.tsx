@@ -79,6 +79,19 @@ export function SettingsUsersPage() {
   const canManage = user?.role === "admin" || user?.role === "moderator"
   const canCreateAdmin = user?.role === "admin"
 
+  const displayUsers = (() => {
+    const fromApi = users
+    if (!user) return fromApi
+    const currentInList = fromApi.some((u) => u.id === user.uid)
+    if (!currentInList) {
+      return [
+        { id: user.uid, username: user.username, role: user.role, frozen: false },
+        ...fromApi,
+      ]
+    }
+    return fromApi
+  })()
+
   const loadUsers = () => {
     apiFetch<AppUser[]>("/users")
       .then(setUsers)
@@ -191,12 +204,13 @@ export function SettingsUsersPage() {
             Управление пользователями, ролями и блокировкой
           </p>
         </div>
-        {canManage && (
-          <Button onClick={() => { resetForm(); setCreateOpen(true) }}>
-            <UserPlus className="mr-2 size-4" />
-            Добавить пользователя
-          </Button>
-        )}
+        <Button
+          onClick={() => { resetForm(); setCreateOpen(true) }}
+          className="shrink-0"
+        >
+          <UserPlus className="mr-2 size-4" />
+          Добавить пользователя
+        </Button>
       </div>
 
       <Card>
@@ -218,18 +232,18 @@ export function SettingsUsersPage() {
                     <TableHead>Логин</TableHead>
                     <TableHead>Роль</TableHead>
                     <TableHead>Статус</TableHead>
-                    {canManage && <TableHead className="w-[50px]" />}
+                    <TableHead className="w-[50px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.length === 0 ? (
+                  {displayUsers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                         Пользователей пока нет
                       </TableCell>
                     </TableRow>
                   ) : (
-                    users.map((u) => (
+                    displayUsers.map((u) => (
                       <TableRow key={u.id}>
                         <TableCell className="font-medium">{u.username}</TableCell>
                         <TableCell>{getRoleLabel(u.role)}</TableCell>
@@ -246,9 +260,8 @@ export function SettingsUsersPage() {
                             </span>
                           )}
                         </TableCell>
-                        {canManage && (
-                          <TableCell>
-                            {(u.role !== "admin" || user?.role === "admin") && u.id !== user?.uid && (
+                        <TableCell>
+                          {canManage && (u.role !== "admin" || user?.role === "admin") && u.id !== user?.uid && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="size-8">
@@ -288,8 +301,7 @@ export function SettingsUsersPage() {
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}
-                          </TableCell>
-                        )}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
