@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (user.frozen === true) {
       return res.status(403).json({ error: "Учётная запись заблокирована" })
     }
-    const token = await createToken({ uid: user.id, username: user.username, role: user.role ?? "user" })
+    const token = await createToken({ uid: user.id, username: user.username, role: user.role ?? "moderator" })
     return res.status(200).json({ token })
   } catch (err) {
     console.error("Login:", err)

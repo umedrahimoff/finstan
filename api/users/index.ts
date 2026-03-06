@@ -14,11 +14,11 @@ async function getAuthWithRole(req: VercelRequest, sql: { (strings: TemplateStri
   if (!auth) return null
   const rows = await sql`SELECT role FROM app_users WHERE id = ${auth.uid} AND frozen = false LIMIT 1`
   const row = rows[0] as { role: string } | undefined
-  return row ? { ...auth, role: row.role ?? "user" } : null
+  return row ? { ...auth, role: row.role ?? "moderator" } : null
 }
 
 function canManage(auth: { role?: string }) {
-  const r = auth.role ?? "user"
+  const r = auth.role ?? "moderator"
   return r === "admin" || r === "moderator"
 }
 
@@ -56,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       const u = (username ?? "").trim()
       const p = password ?? ""
-      const r = (role ?? "user") === "admin" ? "admin" : (role ?? "user") === "moderator" ? "moderator" : "user"
+      const r = (role ?? "moderator") === "admin" ? "admin" : "moderator"
       if (!u || u.length < 2) return res.status(400).json({ error: "Логин минимум 2 символа" })
       if (!p || p.length < 4) return res.status(400).json({ error: "Пароль минимум 4 символа" })
       if (auth.role !== "admin" && r === "admin") {
@@ -109,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updated = true
       }
       if (role !== undefined) {
-        const r = role === "admin" ? "admin" : role === "moderator" ? "moderator" : "user"
+        const r = role === "admin" ? "admin" : "moderator"
         if (r === "admin" && auth.role !== "admin") return res.status(403).json({ error: "Только админ может назначать админа" })
         if (target.role === "admin" && auth.uid === id) return res.status(400).json({ error: "Нельзя понизить свою роль" })
         await sql`UPDATE app_users SET role = ${r} WHERE id = ${id}`

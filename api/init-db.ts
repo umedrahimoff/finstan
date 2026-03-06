@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { neon } = await import("@neondatabase/serverless")
     const sql = neon(url)
 
-    await sql`CREATE TABLE IF NOT EXISTS app_users (id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'user', frozen BOOLEAN NOT NULL DEFAULT false)`
+    await sql`CREATE TABLE IF NOT EXISTS app_users (id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'moderator', frozen BOOLEAN NOT NULL DEFAULT false)`
     await sql`CREATE INDEX IF NOT EXISTS idx_app_users_username ON app_users(username)`
     await sql`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS frozen BOOLEAN NOT NULL DEFAULT false`
 

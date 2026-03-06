@@ -34,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useAuth } from "@/providers/AuthProvider"
 import { useCompanyStore } from "@/stores/useCompanyStore"
 import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
 import { parseBankCsv, type BankRow } from "@/lib/importBank"
@@ -41,6 +42,8 @@ import { parseExportRU, type ExportRURow } from "@/lib/importExportRU"
 import { formatAmount } from "@/lib/currency"
 
 export function SettingsDataPage() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === "admin"
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<Set<string>>(new Set())
@@ -282,13 +285,15 @@ export function SettingsDataPage() {
               <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
                 Импорт данных
               </Button>
-              <Button
-                variant="outline"
-                className="text-destructive hover:text-destructive"
-                onClick={handleOpenReset}
-              >
-                Очистить данные
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  className="text-destructive hover:text-destructive"
+                  onClick={handleOpenReset}
+                >
+                  Очистить данные
+                </Button>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               Экспорт сохраняет все операции в JSON. Импорт — Капиталбанк (CSV) или ExportRU (xlsx).

@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const sql = neon(url)
 
   const authRows = await sql`SELECT role FROM app_users WHERE id = ${auth.uid} AND frozen = false LIMIT 1`
-  const authRole = (authRows[0] as { role: string } | undefined)?.role ?? "user"
+  const authRole = (authRows[0] as { role: string } | undefined)?.role ?? "moderator"
   if (authRole !== "admin" && authRole !== "moderator") return res.status(403).json({ error: "Нет прав" })
 
   if (id === auth.uid) return res.status(400).json({ error: "Нельзя удалить себя" })

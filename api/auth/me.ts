@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       uid: payload.uid,
       username: row.username,
-      role: row.role ?? "user",
+      role: row.role ?? "moderator",
     })
   } catch (err) {
     console.error("Auth me:", err)

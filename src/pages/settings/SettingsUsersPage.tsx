@@ -52,7 +52,6 @@ interface AppUser {
 }
 
 const ROLES = [
-  { value: "user", label: "Пользователь" },
   { value: "moderator", label: "Модератор" },
   { value: "admin", label: "Админ" },
 ] as const
@@ -71,7 +70,7 @@ export function SettingsUsersPage() {
   const [freezeUser, setFreezeUser] = useState<AppUser | null>(null)
   const [formUsername, setFormUsername] = useState("")
   const [formPassword, setFormPassword] = useState("")
-  const [formRole, setFormRole] = useState<"user" | "moderator" | "admin">("user")
+  const [formRole, setFormRole] = useState<"moderator" | "admin">("moderator")
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState("")
 
@@ -110,7 +109,7 @@ export function SettingsUsersPage() {
   const resetForm = () => {
     setFormUsername("")
     setFormPassword("")
-    setFormRole("user")
+    setFormRole("moderator")
     setFormError("")
   }
 
@@ -194,7 +193,7 @@ export function SettingsUsersPage() {
     setEditUser(u)
     setFormUsername(u.username)
     setFormPassword("")
-    setFormRole((u.role as "user" | "moderator" | "admin") || "user")
+    setFormRole((u.role === "admin" ? "admin" : "moderator"))
     setFormError("")
   }
 
@@ -344,13 +343,12 @@ export function SettingsUsersPage() {
               <Label>Роль</Label>
               <Select
                 value={formRole}
-                onValueChange={(v) => setFormRole(v as "user" | "moderator" | "admin")}
+                onValueChange={(v) => setFormRole(v as "moderator" | "admin")}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Пользователь</SelectItem>
                   <SelectItem value="moderator">Модератор</SelectItem>
                   {canCreateAdmin && <SelectItem value="admin">Админ</SelectItem>}
                 </SelectContent>
@@ -401,13 +399,12 @@ export function SettingsUsersPage() {
               <Label>Роль</Label>
               <Select
                 value={formRole}
-                onValueChange={(v) => setFormRole(v as "user" | "moderator" | "admin")}
+                onValueChange={(v) => setFormRole(v as "moderator" | "admin")}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Пользователь</SelectItem>
                   <SelectItem value="moderator">Модератор</SelectItem>
                   {canCreateAdmin && editUser?.id !== user?.uid && (
                     <SelectItem value="admin">Админ</SelectItem>
