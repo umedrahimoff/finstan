@@ -35,12 +35,15 @@ function useDisplayName() {
 }
 
 export function AppLayout() {
-  const { user } = useAuth()
+  const { user, refreshProfile } = useAuth()
   const displayName = useDisplayName()
   const navigate = useNavigate()
   const loadProfile = useProfileStore((s) => s.load)
   const [quickAddType, setQuickAddType] = useState<"income" | "expense" | null>(null)
 
+  useEffect(() => {
+    refreshProfile()
+  }, [refreshProfile])
   useEffect(() => {
     if (user?.uid) loadProfile(user.uid)
   }, [user?.uid])

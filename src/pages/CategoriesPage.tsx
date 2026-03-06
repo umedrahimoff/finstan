@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { MoreHorizontal, Pencil, Trash2, Plus, ArrowDownLeft, ArrowUpRight, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,7 @@ import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { formatAmount } from "@/lib/currency"
 import { CategoryFormDialog } from "@/features/categories/CategoryFormDialog"
 import type { CategoryFormValues } from "@/features/categories/categoryFormSchema"
+import { TablePagination } from "@/components/TablePagination"
 
 function getCategoryTypeIcon(type: string) {
   if (type === "income") return <ArrowDownLeft className="size-4 text-green-600" />
@@ -64,6 +65,8 @@ export function CategoriesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingBatch, setDeletingBatch] = useState(false)
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all")
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
 
   const filteredCategories =
     typeFilter === "all"
@@ -71,6 +74,13 @@ export function CategoriesPage() {
       : typeFilter === "income"
         ? categories.filter((c) => c.type === "income" || c.type === "both")
         : categories.filter((c) => c.type === "expense" || c.type === "both")
+
+  const paginatedCategories = useMemo(
+    () => filteredCategories.slice((page - 1) * pageSize, page * pageSize),
+    [filteredCategories, page, pageSize]
+  )
+
+  useEffect(() => setPage(1), [typeFilter])
 
   const getCategoryTotal = (categoryId: string) => {
     return transactions.reduce((sum, tx) => {
@@ -113,10 +123,10 @@ export function CategoriesPage() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredCategories.length) {
+    if (selectedIds.size === paginatedCategories.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(filteredCategories.map((c) => c.id)))
+      setSelectedIds(new Set(paginatedCategories.map((c) => c.id)))
     }
   }
 
@@ -177,7 +187,7 @@ export function CategoriesPage() {
                   className="flex items-center justify-center"
                   onClick={toggleSelectAll}
                 >
-                  {selectedIds.size === filteredCategories.length && filteredCategories.length > 0 ? (
+                  {selectedIds.size === paginatedCategories.length && paginatedCategories.length > 0 ? (
                     <CheckSquare className="size-4 text-primary" />
                   ) : (
                     <Square className="size-4 text-muted-foreground" />
@@ -201,7 +211,7 @@ export function CategoriesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCategories.map((cat) => {
+              paginatedCategories.map((cat) => {
                 const total = getCategoryTotal(cat.id)
                 return (
                   <TableRow key={cat.id}>
@@ -276,6 +286,18 @@ export function CategoriesPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={page}
+        totalPages={Math.ceil(filteredCategories.length / pageSize) || 1}
+        totalItems={filteredCategories.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => {
+          setPageSize(s)
+          setPage(1)
+        }}
+      />
 
       <CategoryFormDialog
         key={editingCategory?.id ?? "new"}

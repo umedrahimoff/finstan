@@ -14,6 +14,7 @@ const DEFAULT_COMPANY_NAME = "Моя компания"
 interface CompanyState {
   companies: Company[]
   currentCompanyId: string | null
+  setCompaniesFromServer: (companies: Company[]) => void
   addCompany: (name: string) => Company
   updateCompany: (id: string, data: { name?: string }) => void
   archiveCompany: (id: string) => void
@@ -33,6 +34,23 @@ export const useCompanyStore = create<CompanyState>()(
     (set, get) => ({
       companies: [{ id: DEFAULT_COMPANY_ID, name: DEFAULT_COMPANY_NAME }],
       currentCompanyId: DEFAULT_COMPANY_ID,
+
+      setCompaniesFromServer: (companies) => {
+        set((state) => {
+          if (companies.length === 0) {
+            return { companies: [{ id: DEFAULT_COMPANY_ID, name: DEFAULT_COMPANY_NAME }], currentCompanyId: DEFAULT_COMPANY_ID }
+          }
+          const ids = new Set(companies.map((c) => c.id))
+          const merged = companies.map((c) => {
+            const existing = state.companies.find((x) => x.id === c.id)
+            return { ...c, archived: existing?.archived ?? c.archived ?? false }
+          })
+          const current = state.currentCompanyId && ids.has(state.currentCompanyId)
+            ? state.currentCompanyId
+            : companies[0]?.id ?? DEFAULT_COMPANY_ID
+          return { companies: merged, currentCompanyId: current }
+        })
+      },
 
       addCompany: (name) => {
         const id = generateId()

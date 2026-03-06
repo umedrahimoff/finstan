@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { MoreHorizontal, Pencil, Trash2, Plus, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -33,6 +33,7 @@ import { formatAmount } from "@/lib/currency"
 import { COUNTERPARTY_TYPES } from "@/features/counterparties/counterpartyFormSchema"
 import { CounterpartyFormDialog } from "@/features/counterparties/CounterpartyFormDialog"
 import type { CounterpartyFormValues } from "@/features/counterparties/counterpartyFormSchema"
+import { TablePagination } from "@/components/TablePagination"
 
 function getCounterpartyTypeLabel(type: string) {
   return COUNTERPARTY_TYPES.find((t) => t.value === type)?.label ?? type
@@ -62,11 +63,20 @@ export function CounterpartiesPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingBatch, setDeletingBatch] = useState(false)
   const [typeFilter, setTypeFilter] = useState<"all" | "client" | "supplier" | "partner">("all")
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
 
   const filteredCounterparties =
     typeFilter === "all"
       ? counterparties
       : counterparties.filter((c) => c.type === typeFilter)
+
+  const paginatedCounterparties = useMemo(
+    () => filteredCounterparties.slice((page - 1) * pageSize, page * pageSize),
+    [filteredCounterparties, page, pageSize]
+  )
+
+  useEffect(() => setPage(1), [typeFilter])
 
   const getCounterpartyTotal = (counterpartyId: string) => {
     return transactions.reduce((sum, tx) => {
@@ -117,10 +127,10 @@ export function CounterpartiesPage() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredCounterparties.length) {
+    if (selectedIds.size === paginatedCounterparties.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(filteredCounterparties.map((c) => c.id)))
+      setSelectedIds(new Set(paginatedCounterparties.map((c) => c.id)))
     }
   }
 
@@ -185,7 +195,7 @@ export function CounterpartiesPage() {
                   className="flex items-center justify-center"
                   onClick={toggleSelectAll}
                 >
-                  {selectedIds.size === filteredCounterparties.length && filteredCounterparties.length > 0 ? (
+                  {selectedIds.size === paginatedCounterparties.length && paginatedCounterparties.length > 0 ? (
                     <CheckSquare className="size-4 text-primary" />
                   ) : (
                     <Square className="size-4 text-muted-foreground" />
@@ -212,7 +222,7 @@ export function CounterpartiesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCounterparties.map((cp) => {
+              paginatedCounterparties.map((cp) => {
                 const total = getCounterpartyTotal(cp.id)
                 return (
                   <TableRow key={cp.id}>
@@ -292,6 +302,18 @@ export function CounterpartiesPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={page}
+        totalPages={Math.ceil(filteredCounterparties.length / pageSize) || 1}
+        totalItems={filteredCounterparties.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => {
+          setPageSize(s)
+          setPage(1)
+        }}
+      />
 
       <CounterpartyFormDialog
         key={editingCounterparty?.id ?? "new"}

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { MoreHorizontal, Pencil, Trash2, Plus, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,7 @@ import { formatAmount } from "@/lib/currency"
 import { ProjectFormDialog } from "@/features/projects/ProjectFormDialog"
 import type { ProjectFormValues } from "@/features/projects/projectFormSchema"
 import type { Project } from "@/types"
+import { TablePagination } from "@/components/TablePagination"
 
 export function ProjectsPage() {
   const projects = useProjectsStore((s) => s.projects)
@@ -43,6 +44,13 @@ export function ProjectsPage() {
   const [deletingProject, setDeletingProject] = useState<Project | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingBatch, setDeletingBatch] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+
+  const paginatedProjects = useMemo(
+    () => projects.slice((page - 1) * pageSize, page * pageSize),
+    [projects, page, pageSize]
+  )
 
   const getProjectTotal = (projectId: string) => {
     return transactions.reduce((sum, tx) => {
@@ -80,10 +88,10 @@ export function ProjectsPage() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === projects.length) {
+    if (selectedIds.size === paginatedProjects.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(projects.map((p) => p.id)))
+      setSelectedIds(new Set(paginatedProjects.map((p) => p.id)))
     }
   }
 
@@ -141,7 +149,7 @@ export function ProjectsPage() {
                   className="flex items-center justify-center"
                   onClick={toggleSelectAll}
                 >
-                  {selectedIds.size === projects.length && projects.length > 0 ? (
+                  {selectedIds.size === paginatedProjects.length && paginatedProjects.length > 0 ? (
                     <CheckSquare className="size-4 text-primary" />
                   ) : (
                     <Square className="size-4 text-muted-foreground" />
@@ -164,7 +172,7 @@ export function ProjectsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              projects.map((prj) => {
+              paginatedProjects.map((prj) => {
                 const total = getProjectTotal(prj.id)
                 return (
                   <TableRow key={prj.id}>
@@ -230,6 +238,18 @@ export function ProjectsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={page}
+        totalPages={Math.ceil(projects.length / pageSize) || 1}
+        totalItems={projects.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => {
+          setPageSize(s)
+          setPage(1)
+        }}
+      />
 
       <ProjectFormDialog
         key={editingProject?.id ?? "new"}

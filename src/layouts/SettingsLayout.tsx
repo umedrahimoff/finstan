@@ -1,17 +1,21 @@
 import { Link, Outlet, useLocation } from "react-router-dom"
 import { User, Users, Palette, Database, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/providers/AuthProvider"
 
 const subSections = [
   { to: "/app/settings/profile", icon: User, label: "Профиль" },
-  { to: "/app/settings/users", icon: Users, label: "Пользователи" },
+  { to: "/app/settings/users", icon: Users, label: "Пользователи", hideForGlobalAdmin: true },
   { to: "/app/settings/general", icon: Palette, label: "Общие" },
-  { to: "/app/settings/data", icon: Database, label: "Данные" },
+  { to: "/app/settings/data", icon: Database, label: "Данные", hideForGlobalAdmin: true },
   { to: "/app/settings/about", icon: Info, label: "О приложении" },
 ]
 
 export function SettingsLayout() {
   const location = useLocation()
+  const { user } = useAuth()
+  const isGlobalAdmin = user?.isGlobalAdmin === true
+  const visibleSections = subSections.filter((s) => !(isGlobalAdmin && (s as { hideForGlobalAdmin?: boolean }).hideForGlobalAdmin))
 
   return (
     <div className="flex gap-8">
@@ -19,7 +23,7 @@ export function SettingsLayout() {
         <p className="mb-3 px-2 text-xs font-medium text-muted-foreground">
           Подразделы
         </p>
-        {subSections.map((item) => (
+        {visibleSections.map((item) => (
           <Link
             key={item.to}
             to={item.to}

@@ -164,7 +164,7 @@ export function CalendarPage() {
       }
     : selectedDate
       ? {
-          date: selectedDate.toISOString().slice(0, 10),
+          date: format(selectedDate, "yyyy-MM-dd"),
           amount: 0,
           currency: "UZS",
           type: "expense" as const,

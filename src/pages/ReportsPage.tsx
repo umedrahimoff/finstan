@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Link } from "react-router-dom"
 import {
   Select,
@@ -28,14 +28,14 @@ import {
   aggregateByCategory,
   aggregateByCounterparty,
   getMonthName,
+  getAvailablePeriods,
+  getMonthOptionsForYear,
 } from "@/lib/reportUtils"
+import { TablePagination } from "@/components/TablePagination"
 
 const currentYear = new Date().getFullYear()
-const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
-const MONTH_OPTIONS = Object.entries({
-  1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель", 5: "Май", 6: "Июнь",
-  7: "Июль", 8: "Август", 9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь",
-}).map(([value, label]) => ({ value, label }))
+const PAGE_SIZE = 15
+const currentMonth = new Date().getMonth() + 1
 
 export function ReportsPage() {
   const transactions = useTransactionsStore((s) => s.transactions)
@@ -43,7 +43,33 @@ export function ReportsPage() {
   const counterparties = useCounterpartiesStore((s) => s.counterparties)
 
   const [year, setYear] = useState(currentYear)
-  const [month, setMonth] = useState(new Date().getMonth() + 1)
+  const [month, setMonth] = useState(currentMonth)
+  const [pagePlIncome, setPagePlIncome] = useState(1)
+  const [pagePlExpense, setPagePlExpense] = useState(1)
+  const [pageCat, setPageCat] = useState(1)
+  const [pageCp, setPageCp] = useState(1)
+  const [pageSize, setPageSize] = useState(PAGE_SIZE)
+
+  const availablePeriods = useMemo(
+    () => getAvailablePeriods(transactions),
+    [transactions]
+  )
+  const yearOptions = availablePeriods.years
+  const monthOptions = useMemo(
+    () => getMonthOptionsForYear(availablePeriods.monthsByYear, year),
+    [availablePeriods.monthsByYear, year]
+  )
+
+  useEffect(() => {
+    if (yearOptions.length === 0) return
+    const monthsForYear = availablePeriods.monthsByYear[year] ?? []
+    if (!yearOptions.includes(year) || !monthsForYear.includes(month)) {
+      const y = yearOptions[0]
+      const m = availablePeriods.monthsByYear[y]?.[0] ?? currentMonth
+      setYear(y)
+      setMonth(m)
+    }
+  }, [availablePeriods, year, month, yearOptions])
 
   const filteredTxs = useMemo(
     () => filterTransactionsByPeriod(transactions, year, month),
@@ -71,6 +97,15 @@ export function ReportsPage() {
 
   const incomeByCat = byCategory.filter((c) => c.type === "income").sort((a, b) => b.amount - a.amount)
   const expenseByCat = byCategory.filter((c) => c.type === "expense").sort((a, b) => b.amount - a.amount)
+  const byCategorySorted = useMemo(
+    () => [...byCategory].sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)),
+    [byCategory]
+  )
+  const byCounterpartyFiltered = useMemo(
+    () => byCounterparty.filter((c) => c.income > 0 || c.expense > 0),
+    [byCounterparty]
+  )
+
 
   return (
     <div className="space-y-6">
@@ -82,24 +117,41 @@ export function ReportsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+          <Select
+            value={
+              monthOptions.some((o) => o.value === String(month))
+                ? String(month)
+                : ""
+            }
+            onValueChange={(v) => setMonth(Number(v))}
+            disabled={monthOptions.length === 0}
+          >
             <SelectTrigger className="w-[140px]">
-              <SelectValue />
+              <SelectValue placeholder={monthOptions.length === 0 ? "Нет данных" : "Месяц"} />
             </SelectTrigger>
             <SelectContent>
-              {MONTH_OPTIONS.map(({ value, label }) => (
+              {monthOptions.map(({ value, label }) => (
                 <SelectItem key={value} value={value}>
                   {label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+          <Select
+            value={yearOptions.includes(year) ? String(year) : ""}
+            onValueChange={(v) => {
+              const y = Number(v)
+              setYear(y)
+              const months = availablePeriods.monthsByYear[y] ?? []
+              if (!months.includes(month)) setMonth(months[0] ?? month)
+            }}
+            disabled={yearOptions.length === 0}
+          >
             <SelectTrigger className="w-[100px]">
-              <SelectValue />
+              <SelectValue placeholder={yearOptions.length === 0 ? "Нет данных" : "Год"} />
             </SelectTrigger>
             <SelectContent>
-              {YEAR_OPTIONS.map((y) => (
+              {yearOptions.map((y) => (
                 <SelectItem key={y} value={String(y)}>
                   {y}
                 </SelectItem>
@@ -174,6 +226,7 @@ export function ReportsPage() {
                     Нет доходов за период
                   </p>
                 ) : (
+                  <>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -182,7 +235,7 @@ export function ReportsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {incomeByCat.map((c) => (
+                      {incomeByCat.slice((pagePlIncome - 1) * pageSize, pagePlIncome * pageSize).map((c) => (
                         <TableRow key={c.categoryId}>
                           <TableCell>
                             <Link
@@ -199,6 +252,15 @@ export function ReportsPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  <TablePagination
+                    page={pagePlIncome}
+                    totalPages={Math.ceil(incomeByCat.length / pageSize) || 1}
+                    totalItems={incomeByCat.length}
+                    pageSize={pageSize}
+                    onPageChange={setPagePlIncome}
+                    onPageSizeChange={(s) => { setPageSize(s); setPagePlIncome(1) }}
+                  />
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -212,6 +274,7 @@ export function ReportsPage() {
                     Нет расходов за период
                   </p>
                 ) : (
+                  <>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -220,7 +283,7 @@ export function ReportsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {expenseByCat.map((c) => (
+                      {expenseByCat.slice((pagePlExpense - 1) * pageSize, pagePlExpense * pageSize).map((c) => (
                         <TableRow key={c.categoryId}>
                           <TableCell>
                             <Link
@@ -237,6 +300,15 @@ export function ReportsPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  <TablePagination
+                    page={pagePlExpense}
+                    totalPages={Math.ceil(expenseByCat.length / pageSize) || 1}
+                    totalItems={expenseByCat.length}
+                    pageSize={pageSize}
+                    onPageChange={setPagePlExpense}
+                    onPageSizeChange={(s) => { setPageSize(s); setPagePlExpense(1) }}
+                  />
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -257,6 +329,7 @@ export function ReportsPage() {
                   Нет операций за период
                 </p>
               ) : (
+                <>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -266,8 +339,8 @@ export function ReportsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {byCategory
-                      .sort((a, b) => b.amount - a.amount)
+                    {byCategorySorted
+                      .slice((pageCat - 1) * pageSize, pageCat * pageSize)
                       .map((c) => (
                         <TableRow key={`${c.categoryId}-${c.type}`}>
                           <TableCell>
@@ -295,6 +368,15 @@ export function ReportsPage() {
                       ))}
                   </TableBody>
                 </Table>
+                <TablePagination
+                  page={pageCat}
+                  totalPages={Math.ceil(byCategorySorted.length / pageSize) || 1}
+                  totalItems={byCategorySorted.length}
+                  pageSize={pageSize}
+                  onPageChange={setPageCat}
+                  onPageSizeChange={(s) => { setPageSize(s); setPageCat(1) }}
+                />
+                </>
               )}
             </CardContent>
           </Card>
@@ -314,6 +396,7 @@ export function ReportsPage() {
                   Нет операций за период
                 </p>
               ) : (
+                <>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -324,10 +407,8 @@ export function ReportsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {byCounterparty
-                      .filter(
-                        (c) => c.income > 0 || c.expense > 0
-                      )
+                    {byCounterpartyFiltered
+                      .slice((pageCp - 1) * pageSize, pageCp * pageSize)
                       .map((c) => {
                         const total = c.income - c.expense
                         return (
@@ -359,6 +440,15 @@ export function ReportsPage() {
                       })}
                   </TableBody>
                 </Table>
+                <TablePagination
+                  page={pageCp}
+                  totalPages={Math.ceil(byCounterpartyFiltered.length / pageSize) || 1}
+                  totalItems={byCounterpartyFiltered.length}
+                  pageSize={pageSize}
+                  onPageChange={setPageCp}
+                  onPageSizeChange={(s) => { setPageSize(s); setPageCp(1) }}
+                />
+                </>
               )}
             </CardContent>
           </Card>

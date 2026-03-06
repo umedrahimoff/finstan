@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { UserPlus, MoreHorizontal, Pencil, Trash2, Ban, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -43,12 +43,15 @@ import {
 } from "@/components/ui/select"
 import { useAuth } from "@/providers/AuthProvider"
 import { apiFetch } from "@/api/client"
+import { TablePagination } from "@/components/TablePagination"
+import { useCompanyStore } from "@/stores/useCompanyStore"
 
 interface AppUser {
   id: string
   username: string
   role: string
   frozen?: boolean
+  companyIds?: string[]
 }
 
 const ROLES = [
@@ -62,6 +65,7 @@ function getRoleLabel(role: string) {
 
 export function SettingsUsersPage() {
   const { user, refreshProfile } = useAuth()
+  const companies = useCompanyStore((s) => s.companies).filter((c) => !c.archived)
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
@@ -71,13 +75,17 @@ export function SettingsUsersPage() {
   const [formUsername, setFormUsername] = useState("")
   const [formPassword, setFormPassword] = useState("")
   const [formRole, setFormRole] = useState<"moderator" | "admin">("moderator")
+  const [formCompanyIds, setFormCompanyIds] = useState<Set<string>>(new Set())
+  const [formAllCompanies, setFormAllCompanies] = useState(true)
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState("")
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
 
   const canManage = user?.role === "admin" || user?.role === "moderator"
   const canCreateAdmin = user?.role === "admin"
 
-  const displayUsers = (() => {
+  const displayUsers = useMemo(() => {
     const fromApi = users
     if (!user) return fromApi
     const currentInList = fromApi.some((u) => u.id === user.uid)
@@ -88,7 +96,12 @@ export function SettingsUsersPage() {
       ]
     }
     return fromApi
-  })()
+  }, [users, user])
+
+  const paginatedUsers = useMemo(
+    () => displayUsers.slice((page - 1) * pageSize, page * pageSize),
+    [displayUsers, page, pageSize]
+  )
 
   const loadUsers = () => {
     apiFetch<AppUser[]>("/users")
@@ -110,7 +123,14 @@ export function SettingsUsersPage() {
     setFormUsername("")
     setFormPassword("")
     setFormRole("moderator")
+    setFormCompanyIds(new Set())
+    setFormAllCompanies(true)
     setFormError("")
+  }
+
+  const getCompanyIdsToSend = () => {
+    if (formAllCompanies || companies.length <= 1) return companies.map((c) => c.id)
+    return Array.from(formCompanyIds)
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -118,12 +138,15 @@ export function SettingsUsersPage() {
     setFormError("")
     setFormLoading(true)
     try {
+      const companyIds = getCompanyIdsToSend()
       await apiFetch("/users", {
         method: "POST",
         body: JSON.stringify({
           username: formUsername.trim(),
           password: formPassword,
           role: formRole,
+          companyIds,
+          companies: companies.map((c) => ({ id: c.id, name: c.name })),
         }),
       })
       resetForm()
@@ -142,12 +165,13 @@ export function SettingsUsersPage() {
     setFormError("")
     setFormLoading(true)
     try {
-      const body: { id: string; username?: string; password?: string; role?: string } = {
+      const body: { id: string; username?: string; password?: string; role?: string; companyIds?: string[] } = {
         id: editUser.id,
       }
       if (formUsername.trim() !== editUser.username) body.username = formUsername.trim()
       if (formPassword) body.password = formPassword
       if (formRole !== editUser.role) body.role = formRole
+      body.companyIds = getCompanyIdsToSend()
       await apiFetch("/users", {
         method: "PATCH",
         body: JSON.stringify(body),
@@ -194,6 +218,9 @@ export function SettingsUsersPage() {
     setFormUsername(u.username)
     setFormPassword("")
     setFormRole((u.role === "admin" ? "admin" : "moderator"))
+    const ids = u.companyIds ?? []
+    setFormCompanyIds(new Set(ids))
+    setFormAllCompanies(ids.length >= companies.length || companies.length <= 1)
     setFormError("")
   }
 
@@ -224,6 +251,7 @@ export function SettingsUsersPage() {
                   <TableRow>
                     <TableHead>Логин</TableHead>
                     <TableHead>Роль</TableHead>
+                    <TableHead>Компании</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead className="w-[50px]" />
                   </TableRow>
@@ -231,15 +259,22 @@ export function SettingsUsersPage() {
                 <TableBody>
                   {displayUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                         Пользователей пока нет
                       </TableCell>
                     </TableRow>
                   ) : (
-                    displayUsers.map((u) => (
+                    paginatedUsers.map((u) => (
                       <TableRow key={u.id}>
                         <TableCell className="font-medium">{u.username}</TableCell>
                         <TableCell>{getRoleLabel(u.role)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate" title={(u.companyIds ?? []).map((id) => companies.find((c) => c.id === id)?.name ?? id).join(", ")}>
+                          {u.id === user?.uid
+                            ? "Все ваши"
+                            : (u.companyIds ?? []).length >= companies.length
+                              ? "Все"
+                              : (u.companyIds ?? []).map((id) => companies.find((c) => c.id === id)?.name ?? id).join(", ") || "—"}
+                        </TableCell>
                         <TableCell>
                           {u.frozen ? (
                             <span className="inline-flex items-center gap-1.5 text-destructive text-sm">
@@ -309,6 +344,20 @@ export function SettingsUsersPage() {
         </div>
       )}
 
+      {!loading && displayUsers.length > 0 && (
+        <TablePagination
+          page={page}
+          totalPages={Math.ceil(displayUsers.length / pageSize) || 1}
+          totalItems={displayUsers.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => {
+            setPageSize(s)
+            setPage(1)
+          }}
+        />
+      )}
+
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetForm() }}>
         <DialogContent className="max-w-md">
@@ -354,6 +403,53 @@ export function SettingsUsersPage() {
                 </SelectContent>
               </Select>
             </div>
+            {companies.length > 0 && (
+              <div className="space-y-2">
+                <Label>Доступ к компаниям</Label>
+                {companies.length === 1 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {companies[0].name} (автоматически)
+                  </p>
+                ) : (
+                  <div className="space-y-2 rounded-md border p-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formAllCompanies}
+                        onChange={(e) => {
+                          setFormAllCompanies(e.target.checked)
+                          if (e.target.checked) setFormCompanyIds(new Set())
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Все компании</span>
+                    </label>
+                    {!formAllCompanies && (
+                      <div className="flex flex-col gap-1.5 pl-6">
+                        {companies.map((c) => (
+                          <label key={c.id} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formCompanyIds.has(c.id)}
+                              onChange={(e) => {
+                                setFormCompanyIds((prev) => {
+                                  const next = new Set(prev)
+                                  if (e.target.checked) next.add(c.id)
+                                  else next.delete(c.id)
+                                  return next
+                                })
+                              }}
+                              className="rounded"
+                            />
+                            <span className="text-sm">{c.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {formError && <p className="text-sm text-destructive">{formError}</p>}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
@@ -412,6 +508,51 @@ export function SettingsUsersPage() {
                 </SelectContent>
               </Select>
             </div>
+            {companies.length > 0 && (
+              <div className="space-y-2">
+                <Label>Доступ к компаниям</Label>
+                {companies.length === 1 ? (
+                  <p className="text-sm text-muted-foreground">{companies[0].name}</p>
+                ) : (
+                  <div className="space-y-2 rounded-md border p-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formAllCompanies}
+                        onChange={(e) => {
+                          setFormAllCompanies(e.target.checked)
+                          if (e.target.checked) setFormCompanyIds(new Set())
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Все компании</span>
+                    </label>
+                    {!formAllCompanies && (
+                      <div className="flex flex-col gap-1.5 pl-6">
+                        {companies.map((c) => (
+                          <label key={c.id} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formCompanyIds.has(c.id)}
+                              onChange={(e) => {
+                                setFormCompanyIds((prev) => {
+                                  const next = new Set(prev)
+                                  if (e.target.checked) next.add(c.id)
+                                  else next.delete(c.id)
+                                  return next
+                                })
+                              }}
+                              className="rounded"
+                            />
+                            <span className="text-sm">{c.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {formError && <p className="text-sm text-destructive">{formError}</p>}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setEditUser(null)}>

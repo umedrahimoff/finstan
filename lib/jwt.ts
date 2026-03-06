@@ -10,6 +10,7 @@ export interface JwtPayload {
   uid: string
   username: string
   role?: string
+  tenantId?: string | null
 }
 
 export async function createToken(payload: JwtPayload): Promise<string> {

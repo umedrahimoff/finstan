@@ -24,16 +24,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { neon } = await import("@neondatabase/serverless")
   const sql = neon(url)
 
-  const authRows = await sql`SELECT role FROM app_users WHERE id = ${auth.uid} AND frozen = false LIMIT 1`
-  const authRole = (authRows[0] as { role: string } | undefined)?.role ?? "moderator"
+  const authRows = await sql`SELECT role, tenant_id FROM app_users WHERE id = ${auth.uid} AND frozen = false LIMIT 1`
+  const authRow = authRows[0] as { role: string; tenant_id?: string | null } | undefined
+  const authRole = authRow?.role ?? "moderator"
+  const authTenantId = authRow?.tenant_id ?? null
   if (authRole !== "admin" && authRole !== "moderator") return res.status(403).json({ error: "Нет прав" })
+  if (authTenantId == null) return res.status(403).json({ error: "Используйте раздел Управление" })
 
   if (id === auth.uid) return res.status(400).json({ error: "Нельзя удалить себя" })
 
   try {
-    const target = await sql`SELECT role FROM app_users WHERE id = ${id} LIMIT 1`
-    const t = target[0] as { role: string } | undefined
+    const target = await sql`SELECT role, tenant_id FROM app_users WHERE id = ${id} LIMIT 1`
+    const t = target[0] as { role: string; tenant_id?: string | null } | undefined
     if (!t) return res.status(404).json({ error: "Пользователь не найден" })
+    if (t.tenant_id !== authTenantId) return res.status(403).json({ error: "Нет доступа к этому пользователю" })
     if (t.role === "admin" && authRole !== "admin") return res.status(403).json({ error: "Только админ может удалить админа" })
     await sql`DELETE FROM app_users WHERE id = ${id}`
     return res.status(200).json({ ok: true })

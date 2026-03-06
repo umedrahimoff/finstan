@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   Select,
   SelectContent,
@@ -12,15 +12,14 @@ import { useTransactionsStore } from "@/stores/useTransactionsStore"
 import { useAccountsStore } from "@/stores/useAccountsStore"
 import { useCategoriesStore } from "@/stores/useCategoriesStore"
 import { calculateStartupMetrics } from "@/lib/metrics"
-import { getMonthName } from "@/lib/reportUtils"
+import {
+  getMonthName,
+  getAvailablePeriods,
+  getMonthOptionsForYear,
+} from "@/lib/reportUtils"
 
 const currentYear = new Date().getFullYear()
 const currentMonth = new Date().getMonth() + 1
-const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
-const MONTH_OPTIONS = Object.entries({
-  1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель", 5: "Май", 6: "Июнь",
-  7: "Июль", 8: "Август", 9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь",
-}).map(([value, label]) => ({ value, label }))
 
 export function DashboardPage() {
   const transactions = useTransactionsStore((s) => s.transactions)
@@ -29,6 +28,27 @@ export function DashboardPage() {
 
   const [year, setYear] = useState(currentYear)
   const [month, setMonth] = useState(currentMonth)
+
+  const availablePeriods = useMemo(
+    () => getAvailablePeriods(transactions),
+    [transactions]
+  )
+  const yearOptions = availablePeriods.years
+  const monthOptions = useMemo(
+    () => getMonthOptionsForYear(availablePeriods.monthsByYear, year),
+    [availablePeriods.monthsByYear, year]
+  )
+
+  useEffect(() => {
+    if (yearOptions.length === 0) return
+    const monthsForYear = availablePeriods.monthsByYear[year] ?? []
+    if (!yearOptions.includes(year) || !monthsForYear.includes(month)) {
+      const y = yearOptions[0]
+      const m = availablePeriods.monthsByYear[y]?.[0] ?? currentMonth
+      setYear(y)
+      setMonth(m)
+    }
+  }, [availablePeriods, year, month, yearOptions])
 
   const recurringCategoryIds = useMemo(
     () =>
@@ -64,24 +84,43 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+          <Select
+            value={
+              monthOptions.some((o) => o.value === String(month))
+                ? String(month)
+                : ""
+            }
+            onValueChange={(v) => setMonth(Number(v))}
+            disabled={monthOptions.length === 0}
+          >
             <SelectTrigger className="w-[140px]">
-              <SelectValue />
+              <SelectValue placeholder={monthOptions.length === 0 ? "Нет данных" : "Месяц"} />
             </SelectTrigger>
             <SelectContent>
-              {MONTH_OPTIONS.map(({ value, label }) => (
+              {monthOptions.map(({ value, label }) => (
                 <SelectItem key={value} value={value}>
                   {label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+          <Select
+            value={
+              yearOptions.includes(year) ? String(year) : ""
+            }
+            onValueChange={(v) => {
+              const y = Number(v)
+              setYear(y)
+              const months = availablePeriods.monthsByYear[y] ?? []
+              if (!months.includes(month)) setMonth(months[0] ?? month)
+            }}
+            disabled={yearOptions.length === 0}
+          >
             <SelectTrigger className="w-[100px]">
-              <SelectValue />
+              <SelectValue placeholder={yearOptions.length === 0 ? "Нет данных" : "Год"} />
             </SelectTrigger>
             <SelectContent>
-              {YEAR_OPTIONS.map((y) => (
+              {yearOptions.map((y) => (
                 <SelectItem key={y} value={String(y)}>
                   {y}
                 </SelectItem>

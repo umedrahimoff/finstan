@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://finstan.vercel.app",
+        target: process.env.API_PROXY_TARGET ?? "https://finstan.vercel.app",
         changeOrigin: true,
       },
     },

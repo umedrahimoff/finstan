@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { MoreHorizontal, Pencil, Trash2, Plus, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,7 @@ import { BudgetFormDialog } from "@/features/budgets/BudgetFormDialog"
 import { MONTH_NAMES } from "@/features/budgets/budgetFormSchema"
 import type { BudgetFormValues } from "@/features/budgets/budgetFormSchema"
 import type { Budget } from "@/types"
+import { TablePagination } from "@/components/TablePagination"
 
 function getSpentForBudget(
   budget: Budget,
@@ -59,6 +60,13 @@ export function BudgetsPage() {
   const [deletingBudget, setDeletingBudget] = useState<Budget | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingBatch, setDeletingBatch] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+
+  const paginatedBudgets = useMemo(
+    () => budgets.slice((page - 1) * pageSize, page * pageSize),
+    [budgets, page, pageSize]
+  )
 
   const getCategoryName = (id: string) =>
     categories.find((c) => c.id === id)?.name ?? "—"
@@ -97,10 +105,10 @@ export function BudgetsPage() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === budgets.length) {
+    if (selectedIds.size === paginatedBudgets.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(budgets.map((b) => b.id)))
+      setSelectedIds(new Set(paginatedBudgets.map((b) => b.id)))
     }
   }
 
@@ -158,7 +166,7 @@ export function BudgetsPage() {
                   className="flex items-center justify-center"
                   onClick={toggleSelectAll}
                 >
-                  {selectedIds.size === budgets.length && budgets.length > 0 ? (
+                  {selectedIds.size === paginatedBudgets.length && paginatedBudgets.length > 0 ? (
                     <CheckSquare className="size-4 text-primary" />
                   ) : (
                     <Square className="size-4 text-muted-foreground" />
@@ -184,7 +192,7 @@ export function BudgetsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              budgets.map((budget) => {
+              paginatedBudgets.map((budget) => {
                 const spent = getSpentForBudget(budget, transactions)
                 const pct = budget.amount > 0 ? Math.min(100, (spent / budget.amount) * 100) : 0
                 const over = spent > budget.amount
@@ -268,6 +276,18 @@ export function BudgetsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={page}
+        totalPages={Math.ceil(budgets.length / pageSize) || 1}
+        totalItems={budgets.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => {
+          setPageSize(s)
+          setPage(1)
+        }}
+      />
 
       <BudgetFormDialog
         key={editingBudget?.id ?? "new"}

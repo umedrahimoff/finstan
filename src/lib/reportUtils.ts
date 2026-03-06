@@ -9,6 +9,36 @@ export function getMonthName(month: number) {
   return MONTH_NAMES[month] ?? ""
 }
 
+export interface AvailablePeriods {
+  years: number[]
+  monthsByYear: Record<number, number[]>
+}
+
+/** Годы и месяцы, в которых есть операции */
+export function getAvailablePeriods(transactions: Transaction[]): AvailablePeriods {
+  const byYear = new Map<number, Set<number>>()
+  for (const tx of transactions) {
+    const [y, m] = tx.date.split("-").map(Number)
+    if (!byYear.has(y)) byYear.set(y, new Set())
+    byYear.get(y)!.add(m)
+  }
+  const years = Array.from(byYear.keys()).sort((a, b) => b - a)
+  const monthsByYear: Record<number, number[]> = {}
+  for (const y of years) {
+    monthsByYear[y] = Array.from(byYear.get(y)!).sort((a, b) => a - b)
+  }
+  return { years, monthsByYear }
+}
+
+/** Опции месяцев для селекта (только месяцы с данными за год) */
+export function getMonthOptionsForYear(
+  monthsByYear: Record<number, number[]>,
+  year: number
+): { value: string; label: string }[] {
+  const months = monthsByYear[year] ?? []
+  return months.map((m) => ({ value: String(m), label: MONTH_NAMES[m] ?? "" }))
+}
+
 export function filterTransactionsByPeriod(
   transactions: Transaction[],
   year: number,

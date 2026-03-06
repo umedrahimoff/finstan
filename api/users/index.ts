@@ -12,9 +12,9 @@ async function getAuth(req: VercelRequest) {
 async function getAuthWithRole(req: VercelRequest, sql: { (strings: TemplateStringsArray, ...v: unknown[]): Promise<unknown[]> }) {
   const auth = await getAuth(req)
   if (!auth) return null
-  const rows = await sql`SELECT role FROM app_users WHERE id = ${auth.uid} AND frozen = false LIMIT 1`
-  const row = rows[0] as { role: string } | undefined
-  return row ? { ...auth, role: row.role ?? "moderator" } : null
+  const rows = await sql`SELECT role, tenant_id FROM app_users WHERE id = ${auth.uid} AND frozen = false LIMIT 1`
+  const row = rows[0] as { role: string; tenant_id?: string | null } | undefined
+  return row ? { ...auth, role: row.role ?? "moderator", tenantId: row.tenant_id ?? null } : null
 }
 
 function canManage(auth: { role?: string }) {
@@ -37,9 +37,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!auth) return res.status(401).json({ error: "Войдите в систему" })
 
   if (req.method === "GET") {
+    if (auth.tenantId == null) return res.status(200).json([])
     try {
-      const rows = await sql`SELECT id, username, role, frozen FROM app_users ORDER BY username`
-      return res.status(200).json(rows)
+      const rows = await sql`SELECT id, username, role, frozen FROM app_users WHERE tenant_id = ${auth.tenantId} ORDER BY username`
+      const ucRows = await sql`SELECT user_id, company_id FROM user_companies`.catch(
+        () => [] as { user_id: string; company_id: string }[]
+      )
+      const ucMap = new Map<string, string[]>()
+      for (const r of ucRows as { user_id: string; company_id: string }[]) {
+        const arr = ucMap.get(r.user_id) ?? []
+        arr.push(r.company_id)
+        ucMap.set(r.user_id, arr)
+      }
+      const result = (rows as { id: string; username: string; role: string; frozen: boolean }[]).map((r) => ({
+        ...r,
+        companyIds: ucMap.get(r.id) ?? [],
+      }))
+      return res.status(200).json(result)
     } catch (err) {
       console.error("Users list:", err)
       return res.status(500).json({ error: String((err as Error).message) })
@@ -47,12 +61,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === "POST") {
+    if (auth.tenantId == null) return res.status(403).json({ error: "Используйте раздел Управление для создания организаций" })
     if (!canManage(auth)) return res.status(403).json({ error: "Только админ или модератор может добавлять пользователей" })
     try {
-      const { username, password, role } = (req.body ?? {}) as {
+      const { username, password, role, companyIds, companies } = (req.body ?? {}) as {
         username?: string
         password?: string
         role?: string
+        companyIds?: string[]
+        companies?: { id: string; name: string }[]
       }
       const u = (username ?? "").trim()
       const p = password ?? ""
@@ -67,7 +84,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (existing.length > 0) return res.status(400).json({ error: "Логин уже занят" })
       const hash = await bcrypt.hash(p, 10)
       const id = crypto.randomUUID()
-      await sql`INSERT INTO app_users (id, username, password_hash, role) VALUES (${id}, ${u}, ${hash}, ${r})`
+      await sql`INSERT INTO app_users (id, username, password_hash, role, tenant_id) VALUES (${id}, ${u}, ${hash}, ${r}, ${auth.tenantId})`
+
+      let idsToAssign = Array.isArray(companyIds) ? companyIds : []
+      if (Array.isArray(companies) && companies.length > 0 && idsToAssign.length === 0) {
+        idsToAssign = companies.map((c) => c.id).filter(Boolean)
+      }
+      if (idsToAssign.length === 0) {
+        const owned = await sql`SELECT id FROM companies WHERE owner_user_id = ${auth.uid}`.catch(() => [] as { id: string }[])
+        idsToAssign = (owned as { id: string }[]).map((r) => r.id)
+      }
+      if (Array.isArray(companies) && companies.length > 0) {
+        for (const c of companies) {
+          if (c?.id && c?.name) {
+            await sql`
+              INSERT INTO companies (id, name, owner_user_id, archived)
+              VALUES (${c.id}, ${c.name}, ${auth.uid}, false)
+              ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name WHERE companies.owner_user_id = ${auth.uid}
+            `.catch(() => {})
+          }
+        }
+      }
+      for (const cid of idsToAssign) {
+        if (cid) {
+          await sql`
+            INSERT INTO user_companies (user_id, company_id)
+            VALUES (${id}, ${cid})
+            ON CONFLICT (user_id, company_id) DO NOTHING
+          `.catch(() => {})
+        }
+      }
+
       return res.status(200).json({ id, username: u, role: r, frozen: false })
     } catch (err) {
       console.error("User add:", err)
@@ -76,19 +123,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === "PATCH") {
+    if (auth.tenantId == null) return res.status(403).json({ error: "Используйте раздел Управление" })
     if (!canManage(auth)) return res.status(403).json({ error: "Нет прав" })
     try {
-      const { id, username, password, role, frozen } = (req.body ?? {}) as {
+      const { id, username, password, role, frozen, companyIds } = (req.body ?? {}) as {
         id?: string
         username?: string
         password?: string
         role?: string
         frozen?: boolean
+        companyIds?: string[]
       }
       if (!id) return res.status(400).json({ error: "Укажите id пользователя" })
-      const existing = await sql`SELECT id, role FROM app_users WHERE id = ${id} LIMIT 1`
-      const target = existing[0] as { id: string; role: string } | undefined
+      const existing = await sql`SELECT id, role, tenant_id FROM app_users WHERE id = ${id} LIMIT 1`
+      const target = existing[0] as { id: string; role: string; tenant_id?: string | null } | undefined
       if (!target) return res.status(404).json({ error: "Пользователь не найден" })
+      if (target.tenant_id !== auth.tenantId) return res.status(403).json({ error: "Нет доступа к этому пользователю" })
       if (target.role === "admin" && auth.role !== "admin") {
         return res.status(403).json({ error: "Нельзя редактировать админа" })
       }
@@ -118,6 +168,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (frozen !== undefined) {
         if (target.role === "admin" && auth.uid === id) return res.status(400).json({ error: "Нельзя заблокировать себя" })
         await sql`UPDATE app_users SET frozen = ${frozen === true} WHERE id = ${id}`
+        updated = true
+      }
+      if (Array.isArray(companyIds)) {
+        await sql`DELETE FROM user_companies WHERE user_id = ${id}`.catch(() => {})
+        for (const cid of companyIds) {
+          if (cid) {
+            await sql`
+              INSERT INTO user_companies (user_id, company_id)
+              VALUES (${id}, ${cid})
+              ON CONFLICT (user_id, company_id) DO NOTHING
+            `.catch(() => {})
+          }
+        }
         updated = true
       }
       if (!updated) return res.status(400).json({ error: "Нет изменений" })

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom"
 import {
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
@@ -51,6 +52,7 @@ import { formatAmount } from "@/lib/currency"
 import type { Transaction, TransactionType } from "@/types"
 import { TransactionFormDialog } from "@/features/transactions/TransactionFormDialog"
 import type { TransactionFormValues } from "@/features/transactions/transactionFormSchema"
+import { TablePagination } from "@/components/TablePagination"
 
 const TYPE_LABELS: Record<TransactionType, string> = {
   income: "Доход",
@@ -120,10 +122,15 @@ export function TransactionsPage() {
   useEffect(() => {
     if (projectFromUrl) setProjectFilter(projectFromUrl)
   }, [projectFromUrl])
+  useEffect(() => {
+    setPageIndex(0)
+  }, [globalFilter, typeFilter, accountFilter, categoryFilter, counterpartyFilter, projectFilter])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTx, setEditingTx] = useState<Transaction | null>(null)
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null)
   const [deletingBatch, setDeletingBatch] = useState(false)
+  const [pageIndex, setPageIndex] = useState(0)
+  const [pageSize, setPageSize] = useState(25)
 
   const columns: ColumnDef<Transaction>[] = useMemo(
     () => [
@@ -358,16 +365,25 @@ export function TransactionsPage() {
   const table = useReactTable({
     data: filteredTransactions,
     columns,
-    state: { sorting, rowSelection },
+    state: { sorting, rowSelection, pagination: { pageIndex, pageSize } },
     onSortingChange: setSorting,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: (updater) => {
+      const prev = { pageIndex, pageSize }
+      const next = typeof updater === "function" ? updater(prev) : updater
+      setPageIndex(next.pageIndex)
+      setPageSize(next.pageSize)
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     enableRowSelection: true,
     getRowId: (row) => row.id,
   })
 
   const sortedRows = table.getRowModel().rows
+  const totalRows = filteredTransactions.length
+  const totalPages = Math.ceil(totalRows / pageSize) || 1
   const selectedRows = table.getFilteredSelectedRowModel().rows
   const selectedCount = selectedRows.length
 
@@ -577,6 +593,15 @@ export function TransactionsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={pageIndex + 1}
+        totalPages={totalPages}
+        totalItems={totalRows}
+        pageSize={pageSize}
+        onPageChange={(p) => setPageIndex(p - 1)}
+        onPageSizeChange={setPageSize}
+      />
 
       <TransactionFormDialog
         key={editingTx?.id ?? "new"}

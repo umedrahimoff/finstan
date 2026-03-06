@@ -5,6 +5,8 @@ interface AuthUser {
   uid: string
   username: string
   role: string
+  tenantId?: string | null
+  isGlobalAdmin?: boolean
 }
 
 interface AuthContextValue {

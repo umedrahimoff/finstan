@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { MoreHorizontal, Pencil, Trash2, Plus, CheckSquare, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -33,6 +33,7 @@ import { formatAmount } from "@/lib/currency"
 import { ACCOUNT_TYPES } from "@/features/accounts/accountFormSchema"
 import { AccountFormDialog } from "@/features/accounts/AccountFormDialog"
 import type { AccountFormValues } from "@/features/accounts/accountFormSchema"
+import { TablePagination } from "@/components/TablePagination"
 
 function getAccountTypeLabel(type: string) {
   return ACCOUNT_TYPES.find((t) => t.value === type)?.label ?? type
@@ -48,11 +49,22 @@ export function AccountsPage() {
   const [deletingAccount, setDeletingAccount] = useState<{ id: string; name: string } | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deletingBatch, setDeletingBatch] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
 
-  const accountsWithBalance = accounts.map((acc) => ({
-    ...acc,
-    balance: calculateAccountBalance(acc.id, transactions),
-  }))
+  const accountsWithBalance = useMemo(
+    () =>
+      accounts.map((acc) => ({
+        ...acc,
+        balance: calculateAccountBalance(acc.id, transactions),
+      })),
+    [accounts, transactions]
+  )
+  const paginatedAccounts = useMemo(
+    () =>
+      accountsWithBalance.slice((page - 1) * pageSize, page * pageSize),
+    [accountsWithBalance, page, pageSize]
+  )
 
   const handleCreate = () => {
     setEditingAccount(null)
@@ -86,10 +98,10 @@ export function AccountsPage() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === accountsWithBalance.length) {
+    if (selectedIds.size === paginatedAccounts.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(accountsWithBalance.map((a) => a.id)))
+      setSelectedIds(new Set(paginatedAccounts.map((a) => a.id)))
     }
   }
 
@@ -144,7 +156,7 @@ export function AccountsPage() {
                   className="flex items-center justify-center"
                   onClick={toggleSelectAll}
                 >
-                  {selectedIds.size === accountsWithBalance.length && accountsWithBalance.length > 0 ? (
+                  {selectedIds.size === paginatedAccounts.length && paginatedAccounts.length > 0 ? (
                     <CheckSquare className="size-4 text-primary" />
                   ) : (
                     <Square className="size-4 text-muted-foreground" />
@@ -169,7 +181,7 @@ export function AccountsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              accountsWithBalance.map((acc) => (
+              paginatedAccounts.map((acc) => (
                 <TableRow key={acc.id}>
                   <TableCell className="w-[40px]">
                     <button
@@ -243,6 +255,18 @@ export function AccountsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <TablePagination
+        page={page}
+        totalPages={Math.ceil(accountsWithBalance.length / pageSize) || 1}
+        totalItems={accountsWithBalance.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => {
+          setPageSize(s)
+          setPage(1)
+        }}
+      />
 
       {accountsWithBalance.length > 0 && (
         <div className="flex justify-end text-sm">

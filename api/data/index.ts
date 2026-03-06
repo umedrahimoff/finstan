@@ -104,6 +104,9 @@ function rowToPlannedPayment(r: Record<string, unknown>) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await getAuth(req)
   if (!auth) return res.status(401).json({ error: "Войдите в систему" })
+  if (auth.tenantId == null) {
+    return res.status(200).json({ byCompany: {}, companies: [] })
+  }
 
   const url = process.env.DATABASE_URL
   if (!url) return res.status(500).json({ error: "DATABASE_URL not set" })
@@ -113,32 +116,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sql = neon(url)
 
     if (req.method === "GET") {
-      const [accounts, categories, counterparties, projects, transactions, budgets, plannedPayments] = await Promise.all([
-        sql`SELECT * FROM accounts WHERE user_id = ${auth.uid}`,
-        sql`SELECT * FROM categories WHERE user_id = ${auth.uid}`,
-        sql`SELECT * FROM counterparties WHERE user_id = ${auth.uid}`,
-        sql`SELECT * FROM projects WHERE user_id = ${auth.uid}`,
-        sql`SELECT * FROM transactions WHERE user_id = ${auth.uid}`,
-        sql`SELECT * FROM budgets WHERE user_id = ${auth.uid}`,
-        sql`SELECT * FROM planned_payments WHERE user_id = ${auth.uid}`,
-      ])
+      // Get companies user can access: owned by user OR in user_companies, within same tenant
+      const companiesRows = await sql`
+        SELECT c.id, c.name, c.archived, c.owner_user_id
+        FROM companies c
+        JOIN app_users ou ON c.owner_user_id = ou.id
+        WHERE ou.tenant_id = ${auth.tenantId}
+          AND (c.owner_user_id = ${auth.uid}
+            OR c.id IN (SELECT company_id FROM user_companies WHERE user_id = ${auth.uid}))
+      `.catch(() => [] as { id: string; name: string; archived: boolean; owner_user_id: string }[])
+
+      const userCompanies = Array.isArray(companiesRows) ? companiesRows : []
+      const companyIds = userCompanies.length > 0
+        ? userCompanies.map((r: Record<string, unknown>) => r.id as string)
+        : ["default"]
+
+      const ownerByCompany = new Map<string, string>()
+      for (const r of userCompanies) {
+        ownerByCompany.set(r.id as string, (r as { owner_user_id: string }).owner_user_id)
+      }
+      if (!ownerByCompany.has("default")) ownerByCompany.set("default", auth.uid)
 
       const byCompany: ByCompany = {}
-      const companies = new Set<string>([
-        ...accounts.map((r: Record<string, unknown>) => r.company_id as string),
-        ...categories.map((r: Record<string, unknown>) => r.company_id as string),
-        "default",
-      ])
+      for (const cid of companyIds) {
+        const ownerId = ownerByCompany.get(cid) ?? auth.uid
+        const [accounts, categories, counterparties, projects, transactions, budgets, plannedPayments] = await Promise.all([
+          sql`SELECT * FROM accounts WHERE user_id = ${ownerId} AND company_id = ${cid}`,
+          sql`SELECT * FROM categories WHERE user_id = ${ownerId} AND company_id = ${cid}`,
+          sql`SELECT * FROM counterparties WHERE user_id = ${ownerId} AND company_id = ${cid}`,
+          sql`SELECT * FROM projects WHERE user_id = ${ownerId} AND company_id = ${cid}`,
+          sql`SELECT * FROM transactions WHERE user_id = ${ownerId} AND company_id = ${cid}`,
+          sql`SELECT * FROM budgets WHERE user_id = ${ownerId} AND company_id = ${cid}`,
+          sql`SELECT * FROM planned_payments WHERE user_id = ${ownerId} AND company_id = ${cid}`,
+        ])
 
-      for (const cid of companies) {
         byCompany[cid] = {
-          accounts: accounts.filter((r: Record<string, unknown>) => r.company_id === cid).map(rowToAccount),
-          categories: categories.filter((r: Record<string, unknown>) => r.company_id === cid).map(rowToCategory),
-          counterparties: counterparties.filter((r: Record<string, unknown>) => r.company_id === cid).map(rowToCounterparty),
-          projects: projects.filter((r: Record<string, unknown>) => r.company_id === cid).map(rowToProject),
-          transactions: transactions.filter((r: Record<string, unknown>) => r.company_id === cid).map(rowToTransaction),
-          budgets: budgets.filter((r: Record<string, unknown>) => r.company_id === cid).map(rowToBudget),
-          plannedPayments: plannedPayments.filter((r: Record<string, unknown>) => r.company_id === cid).map(rowToPlannedPayment),
+          accounts: (accounts as Record<string, unknown>[]).map(rowToAccount),
+          categories: (categories as Record<string, unknown>[]).map(rowToCategory),
+          counterparties: (counterparties as Record<string, unknown>[]).map(rowToCounterparty),
+          projects: (projects as Record<string, unknown>[]).map(rowToProject),
+          transactions: (transactions as Record<string, unknown>[]).map(rowToTransaction),
+          budgets: (budgets as Record<string, unknown>[]).map(rowToBudget),
+          plannedPayments: (plannedPayments as Record<string, unknown>[]).map(rowToPlannedPayment),
         }
       }
 
@@ -148,16 +167,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      return res.status(200).json({ byCompany })
+      const companies = userCompanies.length > 0
+        ? userCompanies.map((r: Record<string, unknown>) => ({
+            id: r.id,
+            name: r.name,
+            archived: r.archived === true,
+          }))
+        : [{ id: "default", name: "Моя компания", archived: false }]
+
+      return res.status(200).json({ byCompany, companies })
     }
 
     if (req.method === "PUT") {
-      const body = req.body as { byCompany?: ByCompany }
+      const body = req.body as { byCompany?: ByCompany; companies?: { id: string; name: string; archived?: boolean }[] }
       if (!body?.byCompany || typeof body.byCompany !== "object") {
         return res.status(400).json({ error: "Invalid body" })
       }
 
+      if (Array.isArray(body.companies)) {
+        for (const c of body.companies) {
+          if (c?.id && c?.name) {
+            await sql`
+              INSERT INTO companies (id, name, owner_user_id, archived)
+              VALUES (${c.id}, ${c.name}, ${auth.uid}, ${c.archived === true})
+              ON CONFLICT (id) DO UPDATE SET
+                name = EXCLUDED.name,
+                archived = EXCLUDED.archived
+                WHERE companies.owner_user_id = ${auth.uid}
+            `.catch(() => {})
+          }
+        }
+      }
+
+      const ownedIds = await sql`
+        SELECT id FROM companies WHERE owner_user_id = ${auth.uid}
+      `.catch(() => [] as { id: string }[])
+      const ownedSet = new Set((ownedIds as { id: string }[]).map((r) => r.id))
+      if (ownedSet.size === 0) ownedSet.add("default")
+
       for (const [companyId, data] of Object.entries(body.byCompany)) {
+        if (!ownedSet.has(companyId)) continue
         await sql`DELETE FROM transactions WHERE user_id = ${auth.uid} AND company_id = ${companyId}`
         await sql`DELETE FROM budgets WHERE user_id = ${auth.uid} AND company_id = ${companyId}`
         await sql`DELETE FROM planned_payments WHERE user_id = ${auth.uid} AND company_id = ${companyId}`

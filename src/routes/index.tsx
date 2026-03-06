@@ -19,6 +19,7 @@ import { SettingsUsersPage } from "@/pages/settings/SettingsUsersPage"
 import { SettingsGeneralPage } from "@/pages/settings/SettingsGeneralPage"
 import { SettingsDataPage } from "@/pages/settings/SettingsDataPage"
 import { SettingsAboutPage } from "@/pages/settings/SettingsAboutPage"
+import { ManagementPage } from "@/pages/ManagementPage"
 
 export const router = createBrowserRouter([
   { path: "/", element: <LandingPage /> },
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardPage /> },
+      { path: "management", element: <ManagementPage /> },
       { path: "transactions", element: <TransactionsPage /> },
       { path: "accounts", element: <AccountsPage /> },
       { path: "categories", element: <CategoriesPage /> },

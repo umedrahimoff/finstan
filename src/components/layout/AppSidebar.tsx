@@ -14,10 +14,12 @@ import {
   FolderKanban,
   ChevronDown,
   Building2,
+  Check,
   Plus,
   Pencil,
   Archive,
   Trash2,
+  ShieldCheck,
 } from "lucide-react"
 import {
   Sidebar,
@@ -64,6 +66,7 @@ import {
 } from "@/components/ui/dialog"
 import { useCompanyStore } from "@/stores/useCompanyStore"
 import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
+import { useAuth } from "@/providers/AuthProvider"
 
 const navItems = [
   { to: "/app", icon: LayoutDashboard, label: "Главная" },
@@ -81,6 +84,8 @@ const navItems = [
 export function AppSidebar() {
   const location = useLocation()
   const { state: sidebarState } = useSidebar()
+  const { user } = useAuth()
+  const isGlobalAdmin = user?.isGlobalAdmin === true
   const companies = useCompanyStore((s) => s.companies)
   const currentCompanyId = useCompanyStore((s) => s.currentCompanyId)
   const setCurrentCompany = useCompanyStore((s) => s.setCurrentCompany)
@@ -234,6 +239,7 @@ export function AppSidebar() {
         </AlertDialogContent>
       </AlertDialog>
       <SidebarContent>
+        {!isGlobalAdmin && (
         <SidebarGroup>
           <SidebarGroupLabel>Компания</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -262,6 +268,11 @@ export function AppSidebar() {
                         key={c.id}
                         onClick={() => setCurrentCompany(c.id)}
                       >
+                        {c.id === currentCompanyId ? (
+                          <Check className="mr-2 size-4 shrink-0" />
+                        ) : (
+                          <span className="mr-2 inline-block w-4 shrink-0" />
+                        )}
                         {c.name}
                       </DropdownMenuItem>
                     ))}
@@ -277,6 +288,11 @@ export function AppSidebar() {
                             }}
                             className="text-muted-foreground"
                           >
+                            {c.id === currentCompanyId ? (
+                              <Check className="mr-2 size-4" />
+                            ) : (
+                              <span className="mr-2 size-4" />
+                            )}
                             <Archive className="mr-2 size-4 opacity-50" />
                             {c.name}
                           </DropdownMenuItem>
@@ -315,6 +331,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        )}
         <SidebarGroup>
           <SidebarGroupLabel>Навигация</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -340,6 +357,20 @@ export function AppSidebar() {
           <SidebarGroupLabel>Система</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {isGlobalAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === "/app/management"}
+                    tooltip="Управление"
+                  >
+                    <Link to="/app/management">
+                      <ShieldCheck className="size-4" />
+                      <span>Управление</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={location.pathname.startsWith("/app/settings")} tooltip="Настройки">
                   <Link to="/app/settings">
