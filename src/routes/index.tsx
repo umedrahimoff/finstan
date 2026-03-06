@@ -5,6 +5,7 @@ import { LandingPage } from "@/pages/LandingPage"
 import { TermsPage } from "@/pages/TermsPage"
 import { PrivacyPage } from "@/pages/PrivacyPage"
 import { LoginPage } from "@/pages/LoginPage"
+import { RegisterPage } from "@/pages/RegisterPage"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { TransactionsPage } from "@/pages/TransactionsPage"
 import { AccountsPage } from "@/pages/AccountsPage"
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
   { path: "/terms", element: <TermsPage /> },
   { path: "/privacy", element: <PrivacyPage /> },
   { path: "/login", element: <LoginPage /> },
+  { path: "/register", element: <RegisterPage /> },
   {
     path: "/app",
     element: (

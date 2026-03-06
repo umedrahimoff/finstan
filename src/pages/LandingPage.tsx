@@ -227,9 +227,14 @@ export function LandingPage() {
               </div>
               <span className="text-xl font-semibold">Finstan</span>
             </div>
-            <Link to="/login">
-              <Button>Войти</Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to="/login">
+                <Button variant="outline">Войти</Button>
+              </Link>
+              <Link to="/register">
+                <Button>Регистрация</Button>
+              </Link>
+            </div>
           </nav>
           <div className="mx-auto max-w-3xl py-24 text-center sm:py-32">
             <h1 className="landing-animate-fade-up text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
@@ -239,10 +244,15 @@ export function LandingPage() {
               Учёт доходов и расходов, бюджеты, контрагенты, проекты. Всё в одном месте. 
               Понятно, быстро, бесплатно.
             </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link to="/login">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
+              <Link to="/register">
                 <Button size="lg" className="min-w-[200px]">
                   Начать бесплатно
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button size="lg" variant="outline" className="min-w-[200px]">
+                  Войти
                 </Button>
               </Link>
               <p className="text-sm text-muted-foreground">Без карты, без подписок</p>
@@ -416,7 +426,7 @@ export function LandingPage() {
               Нет подписок, нет лимитов на операции, нет скрытых платежей. 
               Просто начните — и пользуйтесь.
             </p>
-            <Link to="/login" className="mt-8 inline-block">
+            <Link to="/register" className="mt-8 inline-block">
               <Button size="lg" className="min-w-[220px]">
                 Начать бесплатно
               </Button>

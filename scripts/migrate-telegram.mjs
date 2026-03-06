@@ -34,4 +34,13 @@ await sql`
 `
 await sql`CREATE INDEX IF NOT EXISTS idx_telegram_otp_user_expires ON telegram_otp_codes(user_id, expires_at)`
 
+await sql`
+  CREATE TABLE IF NOT EXISTS telegram_reg_codes (
+    code TEXT PRIMARY KEY,
+    chat_id TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL
+  )
+`
+await sql`CREATE INDEX IF NOT EXISTS idx_telegram_reg_expires ON telegram_reg_codes(expires_at)`
+
 console.log("Telegram migration done")
