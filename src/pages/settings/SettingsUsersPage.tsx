@@ -162,8 +162,9 @@ export function SettingsUsersPage() {
   const handleDelete = async () => {
     if (!deleteUser) return
     try {
-      await apiFetch(`/users?id=${encodeURIComponent(deleteUser.id)}`, {
+      await apiFetch("/users", {
         method: "DELETE",
+        body: JSON.stringify({ id: deleteUser.id }),
       })
       setDeleteUser(null)
       loadUsers()
@@ -282,7 +283,7 @@ export function SettingsUsersPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
-                                    onClick={() => setDeleteUser(u)}
+                                    onClick={() => { setFormError(""); setDeleteUser(u) }}
                                     disabled={u.id === user?.uid}
                                   >
                                     <Trash2 className="mr-2 size-4" />
@@ -425,7 +426,7 @@ export function SettingsUsersPage() {
       </Dialog>
 
       {/* Delete confirm */}
-      <AlertDialog open={!!deleteUser} onOpenChange={(o) => !o && setDeleteUser(null)}>
+      <AlertDialog open={!!deleteUser} onOpenChange={(o) => { if (!o) { setDeleteUser(null); setFormError("") } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Удалить пользователя?</AlertDialogTitle>
@@ -433,6 +434,7 @@ export function SettingsUsersPage() {
               Пользователь &quot;{deleteUser?.username}&quot; будет удалён. Данные, связанные с ним, останутся.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {formError && <p className="px-6 text-sm text-destructive">{formError}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
