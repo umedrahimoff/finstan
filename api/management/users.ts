@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { verifyToken } from "../../../lib/jwt.js"
+import { verifyToken } from "../../lib/jwt.js"
 
 async function getGlobalAdmin(req: VercelRequest, sql: { (strings: TemplateStringsArray, ...v: unknown[]): Promise<unknown[]> }) {
   const token = req.headers.authorization?.replace("Bearer ", "")
