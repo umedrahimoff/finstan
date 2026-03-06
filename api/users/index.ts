@@ -125,7 +125,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "DELETE") {
     if (!canManage(auth)) return res.status(403).json({ error: "Нет прав" })
     try {
-      const id = (req.query as { id?: string }).id ?? (req.body as { id?: string })?.id
+      const body = typeof req.body === "object" && req.body !== null ? req.body as Record<string, unknown> : {}
+      const id = (req.query as { id?: string }).id ?? (typeof body.id === "string" ? body.id : undefined)
       if (!id) return res.status(400).json({ error: "Укажите id пользователя" })
       if (id === auth.uid) return res.status(400).json({ error: "Нельзя удалить себя" })
       const { neon } = await import("@neondatabase/serverless")

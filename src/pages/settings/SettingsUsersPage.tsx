@@ -62,7 +62,7 @@ function getRoleLabel(role: string) {
 }
 
 export function SettingsUsersPage() {
-  const { user } = useAuth()
+  const { user, refreshProfile } = useAuth()
   const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
@@ -97,6 +97,10 @@ export function SettingsUsersPage() {
       .catch(() => setUsers([]))
       .finally(() => setLoading(false))
   }
+
+  useEffect(() => {
+    refreshProfile()
+  }, [refreshProfile])
 
   useEffect(() => {
     if (!user) return
@@ -162,7 +166,7 @@ export function SettingsUsersPage() {
   const handleDelete = async () => {
     if (!deleteUser) return
     try {
-      await apiFetch("/users", {
+      await apiFetch(`/users?id=${encodeURIComponent(deleteUser.id)}`, {
         method: "DELETE",
         body: JSON.stringify({ id: deleteUser.id }),
       })
