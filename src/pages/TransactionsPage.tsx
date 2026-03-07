@@ -449,29 +449,29 @@ export function TransactionsPage() {
     : undefined
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Операции</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold truncate">Операции</h1>
           <p className="text-muted-foreground">
             Учёт поступлений, расходов и переводов
           </p>
         </div>
-        <Button onClick={handleCreate}>
+        <Button onClick={handleCreate} className="shrink-0">
           <Plus className="mr-2 size-4" />
-          Добавить операцию
+          Добавить
         </Button>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap gap-2 sm:gap-3">
         <Input
           placeholder="Поиск по операциям..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-[200px] min-w-0 col-span-2 sm:col-span-1"
         />
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] min-w-0">
             <SelectValue placeholder="Тип" />
           </SelectTrigger>
           <SelectContent>
@@ -484,7 +484,7 @@ export function TransactionsPage() {
           </SelectContent>
         </Select>
         <Select value={accountFilter} onValueChange={setAccountFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] min-w-0">
             <SelectValue placeholder="Счёт" />
           </SelectTrigger>
           <SelectContent>
@@ -497,7 +497,7 @@ export function TransactionsPage() {
           </SelectContent>
         </Select>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] min-w-0">
             <SelectValue placeholder="Категория" />
           </SelectTrigger>
           <SelectContent>
@@ -510,7 +510,7 @@ export function TransactionsPage() {
           </SelectContent>
         </Select>
         <Select value={counterpartyFilter} onValueChange={setCounterpartyFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] min-w-0">
             <SelectValue placeholder="Контрагент" />
           </SelectTrigger>
           <SelectContent>
@@ -523,7 +523,7 @@ export function TransactionsPage() {
           </SelectContent>
         </Select>
         <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] min-w-0">
             <SelectValue placeholder="Проект" />
           </SelectTrigger>
           <SelectContent>
@@ -576,8 +576,8 @@ export function TransactionsPage() {
         </div>
       )}
 
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-x-auto">
+        <Table className="min-w-[640px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

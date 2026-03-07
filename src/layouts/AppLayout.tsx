@@ -89,11 +89,11 @@ export function AppLayout() {
     <SidebarProvider>
       <AppSidebar onOpenOnboarding={() => setOnboardingOpen(true)} />
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-6" />
-          <div className="flex flex-1 flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 overflow-x-auto">
+        <header className="flex h-14 shrink-0 items-center gap-1 sm:gap-2 border-b px-2 sm:px-4 min-w-0">
+          <SidebarTrigger className="-ml-1 shrink-0" />
+          <Separator orientation="vertical" className="mr-1 sm:mr-2 h-6 shrink-0 hidden sm:block" />
+          <div className="flex flex-1 min-w-0 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center gap-2 shrink-0">
               {accounts.length === 0 ? (
                 <span className="text-sm text-muted-foreground px-2">
                   Нет счетов
@@ -106,13 +106,13 @@ export function AppLayout() {
                     <TooltipTrigger asChild>
                         <Link
                           to={`/transactions?account=${acc.id}`}
-                          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted/80"
+                          className="flex items-center gap-1 sm:gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted/80 shrink-0"
                         >
-                          <span className="text-muted-foreground truncate max-w-[100px]">
+                          <span className="text-muted-foreground truncate max-w-[50px] sm:max-w-[100px]">
                             {acc.name}
                           </span>
                           <span
-                            className={`font-medium tabular-nums ${
+                            className={`font-medium tabular-nums text-xs sm:text-sm ${
                               balance >= 0 ? "text-foreground" : "text-destructive"
                             }`}
                           >
@@ -129,28 +129,29 @@ export function AppLayout() {
               })
               )}
             </div>
-            <Separator orientation="vertical" className="h-6" />
-            <div className="flex gap-2">
+          </div>
+          <Separator orientation="vertical" className="h-6 shrink-0 hidden sm:block" />
+          <div className="flex gap-1 sm:gap-2 shrink-0">
               <Button
                 size="sm"
                 variant="outline"
-                className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 px-2 sm:px-3"
                 onClick={() => setQuickAddType("income")}
               >
-                <ArrowDownLeft className="mr-1.5 size-4" />
-                Доход
+                <ArrowDownLeft className="size-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Доход</span>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 px-2 sm:px-3"
                 onClick={() => setQuickAddType("expense")}
               >
-                <ArrowUpRight className="mr-1.5 size-4" />
-                Расход
+                <ArrowUpRight className="size-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Расход</span>
               </Button>
-            </div>
-            <div className="flex items-center gap-1 ml-auto">
+          </div>
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -166,9 +167,9 @@ export function AppLayout() {
               </Tooltip>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    {displayName}
-                    <Settings className="ml-2 size-4" />
+                  <Button variant="ghost" size="sm" className="min-w-9">
+                    <span className="truncate max-w-[80px] sm:max-w-[140px]">{displayName}</span>
+                    <Settings className="size-4 shrink-0 ml-1 sm:ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -181,10 +182,9 @@ export function AppLayout() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            </div>
           </div>
         </header>
-        <div className="min-w-0 flex-1 overflow-auto p-4">
+        <div className="min-w-0 flex-1 overflow-auto p-2 sm:p-4">
           <Outlet />
         </div>
       </SidebarInset>

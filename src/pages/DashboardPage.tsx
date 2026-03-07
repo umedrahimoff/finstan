@@ -76,10 +76,10 @@ export function DashboardPage() {
   const periodLabel = `${getMonthName(month)} ${year}`
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Главная</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Главная</h1>
           <p className="text-muted-foreground">
             Обзор финансового состояния компании
           </p>
