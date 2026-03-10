@@ -4,14 +4,24 @@ import { useCompanyDataStore } from "@/stores/useCompanyDataStore"
 import { useCompanyStore } from "@/stores/useCompanyStore"
 import { apiFetch } from "@/api/client"
 
-let syncTimeout: ReturnType<typeof setTimeout> | null = null
-const DEBOUNCE_MS = 1500
-
-function syncToServer(byCompany: Record<string, unknown>, companies: { id: string; name: string; archived?: boolean }[]) {
+function syncToServer(
+  byCompany: Record<string, unknown>,
+  companies: { id: string; name: string; archived?: boolean }[],
+  opts?: { keepalive?: boolean }
+) {
   apiFetch("/data", {
     method: "PUT",
     body: JSON.stringify({ byCompany, companies }),
+    ...opts,
   }).catch((err) => console.error("Data sync failed:", err))
+}
+
+function flushSync() {
+  const byCompany = useCompanyDataStore.getState().byCompany
+  const companies = useCompanyStore.getState().companies
+  if (Object.keys(byCompany).length > 0) {
+    syncToServer(byCompany, companies, { keepalive: true })
+  }
 }
 
 export function DataSyncProvider({ children }: { children: React.ReactNode }) {
@@ -51,31 +61,32 @@ export function DataSyncProvider({ children }: { children: React.ReactNode }) {
     let mounted = true
     const unsubData = useCompanyDataStore.subscribe((state) => {
       if (!mounted) return
-      if (syncTimeout) clearTimeout(syncTimeout)
-      syncTimeout = setTimeout(() => {
-        syncTimeout = null
-        if (mounted) {
-          const companies = useCompanyStore.getState().companies
-          syncToServer(state.byCompany, companies)
-        }
-      }, DEBOUNCE_MS)
+      const companies = useCompanyStore.getState().companies
+      syncToServer(state.byCompany, companies)
     })
     const unsubCompanies = useCompanyStore.subscribe((state) => {
       if (!mounted) return
-      if (syncTimeout) clearTimeout(syncTimeout)
-      syncTimeout = setTimeout(() => {
-        syncTimeout = null
-        if (mounted) {
-          const byCompany = useCompanyDataStore.getState().byCompany
-          syncToServer(byCompany, state.companies)
-        }
-      }, DEBOUNCE_MS)
+      const byCompany = useCompanyDataStore.getState().byCompany
+      syncToServer(byCompany, state.companies)
     })
     return () => {
       mounted = false
       unsubData()
       unsubCompanies()
-      if (syncTimeout) clearTimeout(syncTimeout)
+    }
+  }, [user?.uid])
+
+  useEffect(() => {
+    if (!user?.uid) return
+    const onBeforeUnload = () => flushSync()
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flushSync()
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
+    document.addEventListener("visibilitychange", onVisibilityChange)
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload)
+      document.removeEventListener("visibilitychange", onVisibilityChange)
     }
   }, [user?.uid])
 
