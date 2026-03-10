@@ -1,5 +1,4 @@
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
 import type {
   Transaction,
   Account,
@@ -89,9 +88,7 @@ interface CompanyDataState {
   setByCompanyFromServer: (byCompany: ByCompany) => void
 }
 
-export const useCompanyDataStore = create<CompanyDataState>()(
-  persist(
-    (set, get) => ({
+export const useCompanyDataStore = create<CompanyDataState>()((set, get) => ({
       byCompany: {
         default: { ...defaultCompanyData },
       },
@@ -595,14 +592,5 @@ export const useCompanyDataStore = create<CompanyDataState>()(
             },
           }
         }),
-    }),
-    {
-      name: "finstan-company-data",
-      partialize: (state) => ({ byCompany: state.byCompany }),
-      merge: (persisted, current) =>
-        persisted && typeof persisted === "object" && "byCompany" in persisted
-          ? { ...current, byCompany: (persisted as { byCompany: ByCompany }).byCompany }
-          : { ...current, ...(persisted as Partial<CompanyDataState>) },
-    }
-  )
+    })
 )

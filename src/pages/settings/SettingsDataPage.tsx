@@ -106,14 +106,7 @@ export function SettingsDataPage() {
   const handleReset = () => {
     resetCompanyDataBatch(Array.from(selectedCompanyIds))
     setResetDialogOpen(false)
-    const byCompany = useCompanyDataStore.getState().byCompany
-    try {
-      localStorage.setItem(
-        "finstan-company-data",
-        JSON.stringify({ state: { byCompany }, version: 0 })
-      )
-    } catch (_) {}
-    setTimeout(() => window.location.reload(), 50)
+    setTimeout(() => window.location.reload(), 500)
   }
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
